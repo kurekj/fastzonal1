@@ -8,6 +8,392 @@
     "tolerance_relative_float_ops": 1e-06,
     "workloads_without_baseline": []
   },
+  "headline": [
+    {
+      "baseline_seconds_at_max": 0.0463832,
+      "den": "",
+      "fixture": "biebrza_upper",
+      "n_zones_max": 100043,
+      "n_zones_min": 1092,
+      "op": "majority",
+      "raster": "clc100",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0252615,
+          "speedup_at_max_zones": 1.83612216218356,
+          "speedup_max": 3.143443557582668,
+          "speedup_min": 1.83612216218356,
+          "threads_at_max_zones": 2
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.005308051,
+          "speedup_at_max_zones": 8.738273238143341,
+          "speedup_max": 9.119863018401066,
+          "speedup_min": 6.647988314452375,
+          "threads_at_max_zones": 27
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.007193039,
+          "speedup_at_max_zones": 6.4483454072750055,
+          "speedup_max": 6.4483454072750055,
+          "speedup_min": 1.8888776977727164,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.0003842,
+      "den": "",
+      "fixture": "biebrza_upper",
+      "n_zones_max": 16290,
+      "n_zones_min": 16290,
+      "op": "mean",
+      "raster": "dem120",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0007418,
+          "speedup_at_max_zones": 0.5179293610137503,
+          "speedup_max": 0.5179293610137503,
+          "speedup_min": 0.5179293610137503,
+          "threads_at_max_zones": 4
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.000283394,
+          "speedup_at_max_zones": 1.3557097186249532,
+          "speedup_max": 1.3557097186249532,
+          "speedup_min": 1.3557097186249532,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.000782236,
+          "speedup_at_max_zones": 0.4911561216819477,
+          "speedup_max": 0.4911561216819477,
+          "speedup_min": 0.4911561216819477,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.0067366,
+      "den": "",
+      "fixture": "biebrza_upper",
+      "n_zones_max": 100043,
+      "n_zones_min": 1092,
+      "op": "mean",
+      "raster": "dem30",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0029406,
+          "speedup_at_max_zones": 2.2908930150309463,
+          "speedup_max": 4.215811675057831,
+          "speedup_min": 2.2908930150309463,
+          "threads_at_max_zones": 8
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.002585565,
+          "speedup_at_max_zones": 2.60546534316484,
+          "speedup_max": 10.440051084879753,
+          "speedup_min": 2.60546534316484,
+          "threads_at_max_zones": 8
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.010019249,
+          "speedup_at_max_zones": 0.6723657631425269,
+          "speedup_max": 0.6723657631425269,
+          "speedup_min": 0.4819993123629977,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.0018656,
+      "den": "",
+      "fixture": "biebrza_upper",
+      "n_zones_max": 16290,
+      "n_zones_min": 16290,
+      "op": "mean",
+      "raster": "dem60",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0009751,
+          "speedup_at_max_zones": 1.913239667726387,
+          "speedup_max": 1.913239667726387,
+          "speedup_min": 1.913239667726387,
+          "threads_at_max_zones": 2
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.0003618,
+          "speedup_at_max_zones": 5.1564400221116635,
+          "speedup_max": 5.1564400221116635,
+          "speedup_min": 5.1564400221116635,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.002031672,
+          "speedup_at_max_zones": 0.9182584590426014,
+          "speedup_max": 0.9182584590426014,
+          "speedup_min": 0.9182584590426014,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.0716038,
+      "den": "",
+      "fixture": "biebrza_upper",
+      "n_zones_max": 100043,
+      "n_zones_min": 1092,
+      "op": "rasterize",
+      "raster": "dem30",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0736211,
+          "speedup_at_max_zones": 0.9725988880905067,
+          "speedup_max": 14.294704298394334,
+          "speedup_min": 0.9725988880905067,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.003325408,
+          "speedup_at_max_zones": 21.532335280362588,
+          "speedup_max": 95.5859208279983,
+          "speedup_min": 21.532335280362588,
+          "threads_at_max_zones": 56
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.017391987,
+          "speedup_at_max_zones": 4.11705689522422,
+          "speedup_max": 6.416201453675887,
+          "speedup_min": 3.2597724665181387,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.0141169,
+      "den": "dem60",
+      "fixture": "biebrza_upper",
+      "n_zones_max": 100043,
+      "n_zones_min": 1092,
+      "op": "ratio",
+      "raster": "dem30",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0090241,
+          "speedup_at_max_zones": 1.564355448188739,
+          "speedup_max": 11.02944331863154,
+          "speedup_min": 1.564355448188739,
+          "threads_at_max_zones": 8
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.003590997,
+          "speedup_at_max_zones": 3.931192368024813,
+          "speedup_max": 76.70562400478524,
+          "speedup_min": 3.931192368024813,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.010742906,
+          "speedup_at_max_zones": 1.3140671620881723,
+          "speedup_max": 3.6652017518421935,
+          "speedup_min": 1.3140671620881723,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.2538401,
+      "den": "",
+      "fixture": "mazovia_5000",
+      "n_zones_max": 596837,
+      "n_zones_min": 6194,
+      "op": "majority",
+      "raster": "clc100",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.1779704,
+          "speedup_at_max_zones": 1.4263051608582102,
+          "speedup_max": 3.085555061353706,
+          "speedup_min": 1.0393627907886245,
+          "threads_at_max_zones": 4
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.023609667,
+          "speedup_at_max_zones": 10.751532412549487,
+          "speedup_max": 13.105006289531818,
+          "speedup_min": 7.0173971669533035,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.02562106,
+          "speedup_at_max_zones": 9.907478457175465,
+          "speedup_max": 9.907478457175465,
+          "speedup_min": 3.1145755947399265,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.0018332,
+      "den": "",
+      "fixture": "mazovia_5000",
+      "n_zones_max": 96106,
+      "n_zones_min": 96106,
+      "op": "mean",
+      "raster": "dem120",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0026117,
+          "speedup_at_max_zones": 0.7019182907684651,
+          "speedup_max": 0.7019182907684651,
+          "speedup_min": 0.7019182907684651,
+          "threads_at_max_zones": 8
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.001430568,
+          "speedup_at_max_zones": 1.2814490468121755,
+          "speedup_max": 1.2814490468121755,
+          "speedup_min": 1.2814490468121755,
+          "threads_at_max_zones": 8
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.002634973,
+          "speedup_at_max_zones": 0.6957187037590139,
+          "speedup_max": 0.6957187037590139,
+          "speedup_min": 0.6957187037590139,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.0221274,
+      "den": "",
+      "fixture": "mazovia_5000",
+      "n_zones_max": 596837,
+      "n_zones_min": 6194,
+      "op": "mean",
+      "raster": "dem30",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0197129,
+          "speedup_at_max_zones": 1.1224832470108406,
+          "speedup_max": 5.426255582063987,
+          "speedup_min": 1.1224832470108406,
+          "threads_at_max_zones": 8
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.014286929,
+          "speedup_at_max_zones": 1.5487863067003411,
+          "speedup_max": 17.316721296113727,
+          "speedup_min": 1.5487863067003411,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.031050975,
+          "speedup_at_max_zones": 0.7126153043503464,
+          "speedup_max": 1.746657070965424,
+          "speedup_min": 0.4941885228123802,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.0087714,
+      "den": "",
+      "fixture": "mazovia_5000",
+      "n_zones_max": 96106,
+      "n_zones_min": 96106,
+      "op": "mean",
+      "raster": "dem60",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0060586,
+          "speedup_at_max_zones": 1.4477602086290562,
+          "speedup_max": 1.4477602086290562,
+          "speedup_min": 1.4477602086290562,
+          "threads_at_max_zones": 4
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.002076234,
+          "speedup_at_max_zones": 4.224668317732972,
+          "speedup_max": 4.224668317732972,
+          "speedup_min": 4.224668317732972,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.005645577,
+          "speedup_at_max_zones": 1.553676444409491,
+          "speedup_max": 1.553676444409491,
+          "speedup_min": 1.553676444409491,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.1984179,
+      "den": "",
+      "fixture": "mazovia_5000",
+      "n_zones_max": 596837,
+      "n_zones_min": 6194,
+      "op": "rasterize",
+      "raster": "dem30",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.3158182,
+          "speedup_at_max_zones": 0.6282661987181233,
+          "speedup_max": 4.693767922775557,
+          "speedup_min": 0.6282661987181233,
+          "threads_at_max_zones": 8
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.020577029,
+          "speedup_at_max_zones": 9.642689428099654,
+          "speedup_max": 51.88891121380573,
+          "speedup_min": 9.642689428099654,
+          "threads_at_max_zones": 112
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.057924724,
+          "speedup_at_max_zones": 3.4254440297376303,
+          "speedup_max": 3.8036954757286736,
+          "speedup_min": 2.660523371563713,
+          "threads_at_max_zones": 1
+        }
+      }
+    },
+    {
+      "baseline_seconds_at_max": 0.1467718,
+      "den": "dem60",
+      "fixture": "mazovia_5000",
+      "n_zones_max": 596837,
+      "n_zones_min": 6194,
+      "op": "ratio",
+      "raster": "dem30",
+      "rungs": {
+        "csharp-optimised": {
+          "seconds_at_max_zones": 0.0233045,
+          "speedup_at_max_zones": 6.298002531699887,
+          "speedup_max": 9.294173268591873,
+          "speedup_min": 6.084184400731164,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-openmp": {
+          "seconds_at_max_zones": 0.015325657,
+          "speedup_at_max_zones": 9.576868384826831,
+          "speedup_max": 65.89993811931646,
+          "speedup_min": 9.576868384826831,
+          "threads_at_max_zones": 16
+        },
+        "fastzonal-serial": {
+          "seconds_at_max_zones": 0.036392543,
+          "speedup_at_max_zones": 4.033018522503361,
+          "speedup_max": 4.033018522503361,
+          "speedup_min": 1.6838484408858743,
+          "threads_at_max_zones": 1
+        }
+      }
+    }
+  ],
   "inputs": [
     {
       "env": {

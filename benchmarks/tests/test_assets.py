@@ -41,10 +41,18 @@ def test_make_paper_assets_from_raw_csv(tmp_path):
     raw.write_text(RAW)
     out = tmp_path / "paper_assets"
     run([raw], out)
-    for name in ("tables/scaling_zones.tex", "tables/speedup_threads.tex", "tables/ladder.tex",
-                 "figures/scaling_zones.png", "figures/speedup_threads.png", "summary.json"):
+    for name in ("tables/scaling_zones.tex", "tables/speedup_threads.tex", "tables/ladder.tex", "tables/headline.tex",
+                 "figures/scaling_zones.png", "figures/speedup_threads.png", "figures/paper_threads.png",
+                 "summary.json"):
         assert (out / name).exists(), name
     summary = json.loads((out / "summary.json").read_text())
+    head = {(h["fixture"], h["op"], h["raster"]): h for h in summary["headline"]}
+    h = head[("biebrza_upper", "mean", "dem30")]
+    assert h["n_zones_min"] == 4178 and h["n_zones_max"] == 100043 and abs(h["baseline_seconds_at_max"] - 0.41) < 1e-12
+    assert abs(h["rungs"]["fastzonal-openmp"]["speedup_at_max_zones"] - 0.41 / 0.0105) < 1e-9
+    assert abs(h["rungs"]["fastzonal-openmp"]["speedup_min"] - 0.11 / 0.004) < 1e-9
+    assert h["rungs"]["fastzonal-openmp"]["threads_at_max_zones"] == 8
+    assert "biebrza upper & mean dem30 & 4,178--100,043 & 410 &" in (out / "tables/headline.tex").read_text()
     pt = summary["points"]
     key = "biebrza_upper|mean|csharp-baseline|1|grid500|dem30|"
     assert key in pt

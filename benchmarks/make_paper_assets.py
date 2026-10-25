@@ -208,6 +208,156 @@ def table_ladder(points, baseline, out):
     (out / "tables" / "ladder.tex").write_text("\n".join(lines) + "\n")
 
 
+def op_label(p):
+    return f"{p['op']} {p['raster']}" + (f"/{p['den']}" if p["den"] else "")
+
+
+def family_key(p):
+    return (p["fixture"], p["op"], p["raster"], p["den"])
+
+
+def best_per_rung(points, fam):
+    """fam -> {rung: {n_zones: point with the smallest median}}"""
+    best = defaultdict(dict)
+    for p in points.values():
+        if family_key(p) != fam:
+            continue
+        cur = best[p["rung"]].get(p["n_zones"])
+        if cur is None or p["median"] < cur["median"]:
+            best[p["rung"]][p["n_zones"]] = p
+    return best
+
+
+def headline(points, baseline):
+    """Per family (fixture, op, raster, den): the zone range, the baseline time at the largest zone
+    count and, per rung, the range over zone counts of the best speedup; the manuscript quotes these."""
+    rows = []
+    for fam in sorted({family_key(p) for p in points.values()}):
+        best = best_per_rung(points, fam)
+        if BASELINE not in best:
+            continue
+        zones = sorted(best[BASELINE])
+        rec = {"fixture": fam[0], "op": fam[1], "raster": fam[2], "den": fam[3], "n_zones_min": zones[0],
+               "n_zones_max": zones[-1], "baseline_seconds_at_max": best[BASELINE][zones[-1]]["median"], "rungs": {}}
+        for rung, by_zone in best.items():
+            if rung == BASELINE:
+                continue
+            sp = {z: best[BASELINE][z]["median"] / q["median"] for z, q in by_zone.items()
+                  if z in best[BASELINE] and q["median"] > 0}
+            if not sp:
+                continue
+            at_max = by_zone.get(zones[-1])
+            rec["rungs"][rung] = {"speedup_min": min(sp.values()), "speedup_max": max(sp.values()),
+                                  "speedup_at_max_zones": sp.get(zones[-1]),
+                                  "threads_at_max_zones": at_max["threads_eff"] if at_max else None,
+                                  "seconds_at_max_zones": at_max["median"] if at_max else None}
+        rows.append(rec)
+    return rows
+
+
+def table_headline(rows, out):
+    def rng(r, rung):
+        s = r["rungs"].get(rung)
+        if not s:
+            return "--"
+        lo, hi = s["speedup_min"], s["speedup_max"]
+        return f"{fmt(lo)}--{fmt(hi)}$\\times$" if abs(hi - lo) > 0.05 * hi else f"{fmt(hi)}$\\times$"
+
+    lines = ["\\begin{tabular}{llrrrrr}", "\\toprule",
+             "Fixture & Operation & Zones & Baseline [ms] & C\\# optimised & fastzonal serial & fastzonal OpenMP \\\\",
+             "\\midrule"]
+    for r in rows:
+        omp = r["rungs"].get("fastzonal-openmp")
+        thr = f" ({omp['threads_at_max_zones']} thr.)" if omp and omp.get("threads_at_max_zones") else ""
+        zones = f"{r['n_zones_max']:,}" if r["n_zones_min"] == r["n_zones_max"] else f"{r['n_zones_min']:,}--{r['n_zones_max']:,}"
+        lines.append(f"{r['fixture'].replace('_', ' ')} & {op_label(r)} & {zones} & "
+                     f"{fmt(r['baseline_seconds_at_max'] * 1000)} & {rng(r, 'csharp-optimised')} & "
+                     f"{rng(r, 'fastzonal-serial')} & {rng(r, 'fastzonal-openmp')}{thr} \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    (out / "tables" / "headline.tex").write_text("\n".join(lines) + "\n")
+
+
+def paper_figures(points, baseline, out):
+    """Compact figures for the manuscript: scaling with zones for the families measured at three or
+    more zone counts (one row per fixture), and speedup against effective threads at the largest
+    zone count of the fixture with the most zones."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fams = defaultdict(list)
+    for fam in sorted({family_key(p) for p in points.values()}):
+        if len({p["n_zones"] for p in points.values() if family_key(p) == fam}) >= 3:
+            fams[fam[0]].append(fam)
+    if fams:
+        scaling_figure(fams, points, out, plt)
+    top = max(baseline.values(), key=lambda b: b["n_zones"], default=None)
+    if top is not None:
+        threads_figure(top, points, baseline, out, plt)
+
+
+def scaling_figure(fams, points, out, plt):
+    ncol = max(len(v) for v in fams.values())
+    fig, axes = plt.subplots(len(fams), ncol, figsize=(1.9 * ncol + 0.6, 2.3 * len(fams) + 0.3), squeeze=False)
+    for row, (fixture, flist) in enumerate(sorted(fams.items())):
+        for col in range(ncol):
+            ax = axes[row][col]
+            if col >= len(flist):
+                ax.axis("off")
+                continue
+            fam = flist[col]
+            best = best_per_rung(points, fam)
+            for rung in sorted(best, key=rung_rank):
+                xs = sorted(best[rung])
+                ax.plot(xs, [best[rung][x]["median"] * 1000 for x in xs], marker="o", markersize=2.5, linewidth=1,
+                        label=rung)
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            ax.set_title(f"{fixture.replace('_', ' ')}: {fam[1]} {fam[2]}" + (f"/{fam[3]}" if fam[3] else ""),
+                         fontsize=7)
+            ax.set_xlabel("zones", fontsize=7)
+            if col == 0:
+                ax.set_ylabel("median wall time [ms]", fontsize=7)
+            ax.tick_params(labelsize=6)
+            ax.grid(True, which="both", linewidth=0.3)
+            if row == 0 and col == 0:
+                ax.legend(fontsize=5)
+    fig.tight_layout()
+    fig.savefig(out / "figures" / "paper_scaling.png", dpi=220)
+    plt.close(fig)
+
+
+def threads_figure(top, points, baseline, out, plt):
+    fixture = top["fixture"]
+    wls = sorted((w for w, b in baseline.items() if b["fixture"] == fixture and b["n_zones"] == top["n_zones"]),
+                 key=lambda w: baseline[w]["op"])
+    if not wls:
+        return
+    fig, axes = plt.subplots(1, len(wls), figsize=(1.9 * len(wls) + 0.6, 2.5), squeeze=False)
+    for ax, w in zip(axes[0], wls):
+        series, chosen = defaultdict(dict), set()
+        for p in sorted(points.values(), key=lambda q: q["threads"]):
+            if workload_key(p) != w or p["rung"] == BASELINE or p["median"] <= 0 or (p["rung"], p["threads_eff"]) in chosen:
+                continue
+            chosen.add((p["rung"], p["threads_eff"]))
+            series[p["rung"]][p["threads_eff"]] = baseline[w]["median"] / p["median"]
+        for rung in sorted(series, key=rung_rank):
+            xs = sorted(series[rung])
+            ax.plot(xs, [series[rung][x] for x in xs], marker="o", markersize=2.5, linewidth=1, label=rung)
+        ax.axhline(1.0, color="grey", linewidth=0.6, linestyle=":")
+        ax.set_xscale("log", base=2)
+        ax.set_title(f"{op_label(baseline[w])} ({baseline[w]['n_zones']:,} zones)", fontsize=7)
+        ax.set_xlabel("effective threads", fontsize=7)
+        ax.tick_params(labelsize=6)
+        ax.grid(True, which="both", linewidth=0.3)
+    axes[0][0].set_ylabel("speedup over C# baseline", fontsize=7)
+    axes[0][0].legend(fontsize=5)
+    fig.suptitle(fixture.replace("_", " "), fontsize=8)
+    fig.tight_layout()
+    fig.savefig(out / "figures" / "paper_threads.png", dpi=220)
+    plt.close(fig)
+
+
 def figures(points, baseline, out):
     import matplotlib
     matplotlib.use("Agg")
@@ -295,10 +445,14 @@ def main(argv=None):
     table_scaling_zones(points, args.out)
     table_speedup_threads(points, baseline, args.out)
     table_ladder(points, baseline, args.out)
+    head = headline(points, baseline)
+    table_headline(head, args.out)
     figures(points, baseline, args.out)
+    paper_figures(points, baseline, args.out)
     summary = {
         "inputs": provenance,
         "mixed_runs_allowed": args.allow_mixed,
+        "headline": head,
         "points": points,
         "speedup": {w: {r: dict(t) for r, t in rs.items()} for w, rs in speedup.items()},
         "checksum": {"tolerance_relative_float_ops": 1e-6, "exact_ops": list(EXACT_OPS), "mismatches": mismatches,

@@ -1,0 +1,18 @@
+\begin{tabular}{llrrrrr}
+\toprule
+Fixture & Operation & Zones & Baseline [ms] & C\# optimised & fastzonal serial & fastzonal OpenMP \\
+\midrule
+biebrza upper & majority clc100 & 1,092--100,043 & 46.4 & 1.84--3.14$\times$ & 1.89--6.45$\times$ & 6.65--9.12$\times$ (27 thr.) \\
+biebrza upper & mean dem120 & 16,290 & 0.384 & 0.518$\times$ & 0.491$\times$ & 1.36$\times$ (16 thr.) \\
+biebrza upper & mean dem30 & 1,092--100,043 & 6.74 & 2.29--4.22$\times$ & 0.482--0.672$\times$ & 2.61--10.4$\times$ (8 thr.) \\
+biebrza upper & mean dem60 & 16,290 & 1.87 & 1.91$\times$ & 0.918$\times$ & 5.16$\times$ (16 thr.) \\
+biebrza upper & rasterize dem30 & 1,092--100,043 & 71.6 & 0.973--14.3$\times$ & 3.26--6.42$\times$ & 21.5--95.6$\times$ (56 thr.) \\
+biebrza upper & ratio dem30/dem60 & 1,092--100,043 & 14.1 & 1.56--11.0$\times$ & 1.31--3.67$\times$ & 3.93--76.7$\times$ (16 thr.) \\
+mazovia 5000 & majority clc100 & 6,194--596,837 & 254 & 1.04--3.09$\times$ & 3.11--9.91$\times$ & 7.02--13.1$\times$ (16 thr.) \\
+mazovia 5000 & mean dem120 & 96,106 & 1.83 & 0.702$\times$ & 0.696$\times$ & 1.28$\times$ (8 thr.) \\
+mazovia 5000 & mean dem30 & 6,194--596,837 & 22.1 & 1.12--5.43$\times$ & 0.494--1.75$\times$ & 1.55--17.3$\times$ (16 thr.) \\
+mazovia 5000 & mean dem60 & 96,106 & 8.77 & 1.45$\times$ & 1.55$\times$ & 4.22$\times$ (16 thr.) \\
+mazovia 5000 & rasterize dem30 & 6,194--596,837 & 198 & 0.628--4.69$\times$ & 2.66--3.80$\times$ & 9.64--51.9$\times$ (112 thr.) \\
+mazovia 5000 & ratio dem30/dem60 & 6,194--596,837 & 147 & 6.08--9.29$\times$ & 1.68--4.03$\times$ & 9.58--65.9$\times$ (16 thr.) \\
+\bottomrule
+\end{tabular}
