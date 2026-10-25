@@ -1,0 +1,24 @@
+name: fastzonal
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - numpy
+  - rasterio
+  - pyogrio
+  - shapely
+  - pyproj
+  - pandas
+  - matplotlib-base
+  - gdal
+  - exactextract
+  - rasterstats
+  - xarray-spatial
+  - pytest
+  - cmake>=3.20
+  - ninja
+  - gcc_linux-64=13
+  - gxx_linux-64=13
+  - libgomp
+  - conda-lock
