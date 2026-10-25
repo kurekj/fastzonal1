@@ -18,6 +18,7 @@ endif()
 
 add_library(fastzonal SHARED
     src/core/version.cpp
+    src/core/options.cpp
 )
 target_include_directories(fastzonal PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

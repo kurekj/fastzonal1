@@ -11,6 +11,7 @@ include(Catch)
 
 add_executable(fz_tests
     test_version.cpp
+    test_options.cpp
 )
 target_link_libraries(fz_tests PRIVATE fastzonal Catch2::Catch2WithMain)
 target_compile_features(fz_tests PRIVATE cxx_std_17)
