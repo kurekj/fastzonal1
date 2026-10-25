@@ -50,3 +50,7 @@ Conventions the harnesses rely on:
 
 `prepare_fixture.py` creates these files from a GeoTIFF and any GDAL-readable polygon layer and
 refuses inputs whose CRS differ. `make_synthetic.py` creates a download-free fixture.
+
+Licence labels: the `licence` field of the `zones_*.json` headers in the v1 archive says "CC BY 4.0" for
+the grids clipped to HydroBASINS outlines; the correct term is the HydroSHEDS version 1 licence agreement
+(free for non-commercial and commercial use, attribution to HydroSHEDS required), as `manifest.json` states.

@@ -4,7 +4,7 @@
     "sha256": "30ba87848199d9be881048ecfbf9e0ad100f64b70fb273ed16c5ed97c014b601",
     "bytes": 54314564,
     "contents": "fixtures (leze_micro, biebrza_upper, gradascica, mazovia_5000), expected/biebrza_upper, synthetic_small, manifest.json",
-    "note": "the URL is filled in when the archive is deposited; until then set FZ_FIXTURE_ARCHIVE to a local copy"
+    "note": "the URL is filled in when the archive is deposited; until then set FZ_FIXTURE_ARCHIVE to a local copy; the zones_*.json headers inside the v1 archive label the HydroBASINS-derived grids CC BY 4.0, which is wrong: HydroBASINS is distributed under the HydroSHEDS version 1 licence agreement (the archive bytes are kept as hashed; this manifest states the correct licence)"
   },
   "fixtures": {
     "leze_micro": {
@@ -84,7 +84,7 @@
         ],
         "grid": [
           "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline",
-          "CC BY 4.0"
+          "HydroSHEDS version 1 licence agreement (free for non-commercial and commercial use, attribution required)"
         ]
       }
     },
@@ -479,7 +479,7 @@
         ],
         "grid": [
           "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline",
-          "CC BY 4.0"
+          "HydroSHEDS version 1 licence agreement (free for non-commercial and commercial use, attribution required)"
         ]
       }
     },
@@ -722,7 +722,7 @@
         ],
         "grid": [
           "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline",
-          "CC BY 4.0"
+          "HydroSHEDS version 1 licence agreement (free for non-commercial and commercial use, attribution required)"
         ]
       }
     }

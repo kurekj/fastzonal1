@@ -3,7 +3,7 @@
 
 Runs on the machine that hosts the SpongeGIS PostGIS database (the open pan-European layers
 GEDTM30 terrain, CORINE Land Cover 2018 and Copernicus imperviousness are read from it with
-read-only queries through `docker exec`). Catchment outlines come from HydroBASINS (CC BY 4.0),
+read-only queries through `docker exec`). Catchment outlines come from HydroBASINS (HydroSHEDS v1 licence agreement),
 downloaded on first use. Every file written is described in FORMAT.md; `manifest.json` records
 sizes, hashes, sources and licences.
 
@@ -76,7 +76,7 @@ SOURCES = {
               "https://land.copernicus.eu/en/products/high-resolution-layer-imperviousness/imperviousness-density-2018",
               "Copernicus Land Monitoring Service: free, full and open access with attribution"),
     "grid": ("square grid aligned to the cell size, clipped to a HydroBASINS v1c basin outline "
-             "(https://www.hydrosheds.org/products/hydrobasins), reprojected to EPSG:3035", "CC BY 4.0"),
+             "(https://www.hydrosheds.org/products/hydrobasins), reprojected to EPSG:3035", "HydroSHEDS version 1 licence agreement (free for non-commercial and commercial use, attribution required)"),
 }
 
 
