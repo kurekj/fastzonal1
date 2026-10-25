@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using FzBench.Rungs;
@@ -34,7 +34,9 @@ public static class Program
             "  FzBench expected <fixtureDir> <outDir>\n" +
             "      writes <outDir>/<fixture>/<op>_<zones>_<raster>.csv for every zone set and raster\n" +
             "  FzBench bench <fixtureDir> <rung> <op> <zones> <raster> [--den <raster>] [--threads T] [--reps R] [--band-rows B] [--out results.csv]\n" +
-            "      rungs: csharp-baseline; ops: rasterize, mean, majority, ratio\n" +
+            "      rungs: csharp-baseline, csharp-optimised, fastzonal-dotnet, fastzonal-dotnet-serial (the library through\n" +
+            "      its .NET binding; the C++ driver fz_bench measures fastzonal-openmp and fastzonal-serial)\n" +
+            "      ops: rasterize, mean, majority, ratio\n" +
             "      one untimed warm-up precedes the R measured repetitions; the CSV records the requested threads and,\n" +
             "      in threads_eff, the workers the rung could use on that raster (never more than bands)");
         return 1;
@@ -44,8 +46,8 @@ public static class Program
     {
         "csharp-baseline" => new BaselineRung(),
         "csharp-optimised" => new OptimisedRung(threads, bandRows),
-        "fastzonal-openmp" => new FastZonalRung(serial: false, threads, bandRows),
-        "fastzonal-serial" => new FastZonalRung(serial: true, threads, bandRows),
+        "fastzonal-dotnet" => new FastZonalRung(serial: false, threads, bandRows),
+        "fastzonal-dotnet-serial" => new FastZonalRung(serial: true, threads, bandRows),
         _ => throw new ArgumentException($"unknown rung {name}")
     };
 
@@ -113,7 +115,10 @@ public static class Program
                 default: throw new ArgumentException($"unknown option {args[i]}");
             }
         }
+        var swLoad = Stopwatch.StartNew();
         var f = Fixture.Load(fixtureDir);
+        swLoad.Stop();
+        double loadSeconds = swLoad.Elapsed.TotalSeconds;
         var rung = MakeRung(rungName, threads, bandRows);
         var mask = op == "rasterize" ? null : rung.Rasterize(f, zones, raster);
         var denOnGrid = op == "ratio" ? Fixture.PrepareDenominator(f.Rasters[raster], f.Rasters[den]) : null;
@@ -164,9 +169,9 @@ public static class Program
                 sw.Elapsed.TotalSeconds.ToString("G17", Inv), checksum.ToString("G17", Inv),
                 zones, raster, op == "ratio" ? den : "", zcount.ToString(Inv),
                 ((long)r.Width * r.Height).ToString(Inv), rung.EffectiveThreads(r.Height).ToString(Inv),
-                bandRows.ToString(Inv))).Append('\n');
+                bandRows.ToString(Inv), loadSeconds.ToString("G17", Inv))).Append('\n');
         }
-        var header = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows\n";
+        var header = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows,load_seconds\n";
         if (!File.Exists(outPath) || new FileInfo(outPath).Length == 0)
             File.WriteAllText(outPath, header, new UTF8Encoding(false));
         File.AppendAllText(outPath, lines.ToString(), new UTF8Encoding(false));

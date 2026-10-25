@@ -29,7 +29,8 @@ from collections import defaultdict
 from pathlib import Path
 
 COLUMNS = ["fixture", "op", "rung", "threads", "rep", "seconds", "checksum", "zones", "raster", "den", "n_zones",
-           "n_cells", "threads_eff", "band_rows"]
+           "n_cells", "threads_eff", "band_rows", "load_seconds"]
+EXACT_OPS = ("rasterize", "majority")  # integer results: checksums must match exactly
 BASELINE = "csharp-baseline"
 RUNG_ORDER = ["csharp-baseline", "csharp-optimised", "fastzonal-serial", "fastzonal-openmp", "fastzonal-cuda"]
 
@@ -95,6 +96,7 @@ def summarise(rows):
             "zones": r0["zones"], "raster": r0["raster"], "den": r0["den"],
             "n_zones": int(r0["n_zones"]), "n_cells": int(r0["n_cells"]),
             "n": len(secs), "median": statistics.median(secs), "min": min(secs), "max": max(secs),
+            "load_seconds": float(r0.get("load_seconds") or 0.0),
             "checksums": [r["checksum_f"] for r in rs], "sources": sorted({r["source"] for r in rs}),
         }
     baseline = {}
@@ -112,12 +114,25 @@ def summarise(rows):
         if p["rung"] != BASELINE:
             speedup[w][p["rung"]][str(p["threads"])] = b["median"] / p["median"] if p["median"] > 0 else None
         bsum = b["checksums"][0]
-        tol = 1e-6 * max(1.0, abs(bsum)) if math.isfinite(bsum) else 0.0
+        tol = 0.0 if p["op"] in EXACT_OPS else (1e-6 * max(1.0, abs(bsum)) if math.isfinite(bsum) else 0.0)
         for rep, c in enumerate(p["checksums"]):
             if not math.isfinite(c) or not math.isfinite(bsum) or abs(c - bsum) > tol:
                 mismatches.append({"workload": w, "rung": p["rung"], "threads": p["threads"], "rep": rep,
                                    "checksum": c, "baseline": bsum})
-    return points, baseline, speedup, mismatches, unbaselined
+    # the serial backend and the OpenMP backend at one thread run the same code path: a difference
+    # beyond 15% between their medians is measurement variability and is flagged, never explained
+    variability = []
+    for p in points.values():
+        if p["rung"] != "fastzonal-openmp" or p["threads"] != 1:
+            continue
+        q = points.get("|".join([p["fixture"], p["op"], "fastzonal-serial", "1", p["zones"], p["raster"], p["den"]]))
+        if q is None or q["median"] <= 0:
+            continue
+        ratio = p["median"] / q["median"]
+        if abs(ratio - 1.0) > 0.15:
+            variability.append({"workload": workload_key(p), "openmp_1_median": p["median"],
+                                "serial_median": q["median"], "ratio": ratio})
+    return points, baseline, speedup, mismatches, unbaselined, variability
 
 
 def fmt(x):
@@ -149,7 +164,7 @@ def table_scaling_zones(points, out):
             best[k] = p
     rows = sorted(best.values(), key=lambda p: (p["fixture"], p["op"], p["raster"], p["den"], p["n_zones"],
                                                  rung_rank(p["rung"])))
-    lines = ["\\begin{tabular}{llrrlrr}", "\\toprule",
+    lines = ["\\begin{tabular}{lrrlrr}", "\\toprule",
              "Workload & Zones & Cells & Rung & Threads & Median [s] \\\\", "\\midrule"]
     for p in rows:
         lines.append(f"{wl_label(p)} & {p['n_zones']:,} & {p['n_cells']:,} & {p['rung']} & {p['threads_eff']} & "
@@ -234,13 +249,16 @@ def figures(points, baseline, out):
     fig, axes = plt.subplots(nrow, ncol, figsize=(7.0, 2.6 * nrow), squeeze=False)
     for ax, w in zip(axes.flat, workloads):
         series = defaultdict(dict)
-        for p in points.values():
+        chosen = {}
+        for p in sorted(points.values(), key=lambda q: q["threads"]):
             if workload_key(p) != w or p["rung"] == BASELINE or p["median"] <= 0:
                 continue
-            cur = series[p["rung"]].get(p["threads_eff"])
-            val = baseline[w]["median"] / p["median"]
-            if cur is None or val > cur:
-                series[p["rung"]][p["threads_eff"]] = val
+            # requested counts that collapse to the same effective count are the same configuration:
+            # keep the smallest request, never the best of several equivalent measurements
+            if (p["rung"], p["threads_eff"]) in chosen:
+                continue
+            chosen[(p["rung"], p["threads_eff"])] = True
+            series[p["rung"]][p["threads_eff"]] = baseline[w]["median"] / p["median"]
         for rung in sorted(series, key=rung_rank):
             xs = sorted(series[rung])
             ax.plot(xs, [series[rung][x] for x in xs], marker="o", markersize=3, linewidth=1, label=rung)
@@ -271,7 +289,7 @@ def main(argv=None):
     rows, provenance = read_raw(paths, args.allow_mixed)
     if not rows:
         sys.exit("no rows")
-    points, baseline, speedup, mismatches, unbaselined = summarise(rows)
+    points, baseline, speedup, mismatches, unbaselined, variability = summarise(rows)
     (args.out / "tables").mkdir(parents=True, exist_ok=True)
     (args.out / "figures").mkdir(parents=True, exist_ok=True)
     table_scaling_zones(points, args.out)
@@ -283,13 +301,15 @@ def main(argv=None):
         "mixed_runs_allowed": args.allow_mixed,
         "points": points,
         "speedup": {w: {r: dict(t) for r, t in rs.items()} for w, rs in speedup.items()},
-        "checksum": {"tolerance_relative": 1e-6, "mismatches": mismatches, "workloads_without_baseline": unbaselined},
+        "checksum": {"tolerance_relative_float_ops": 1e-6, "exact_ops": list(EXACT_OPS), "mismatches": mismatches,
+                     "workloads_without_baseline": unbaselined},
+        "variability_warnings": variability,
     }
     with open(args.out / "summary.json", "w", encoding="utf-8", newline="\n") as f:
         json.dump(summary, f, indent=2, sort_keys=True)
         f.write("\n")
     print(f"{len(points)} points, {len(baseline)} baselined workloads, {len(unbaselined)} without baseline, "
-          f"{len(mismatches)} checksum mismatches")
+          f"{len(mismatches)} checksum mismatches, {len(variability)} variability warnings")
     return 0
 
 

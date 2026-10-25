@@ -139,3 +139,27 @@ public class RasterizerValidationTests
         Assert.Equal(100, mask.Length);
     }
 }
+
+
+public class BindingCompletenessTests
+{
+    [Fact]
+    public void DoubleMajorityOverloadExists()
+    {
+        double[] raster = { 3, 3, 1, 1, 5, 5, 5, 2, 7, 7, 8, 8, 0, 0, 0, 0 };
+        int[] mask = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, -1, -1, -1, -1 };
+        var majority = Zonal.Majority(raster, mask, 4, 4, 2, -9999.0, ReadOnlySpan<int>.Empty, ReadOnlySpan<int>.Empty,
+            out var has);
+        Assert.Equal(5.0, majority[0]);
+        Assert.Equal(7.0, majority[1]);
+        Assert.True(has[0]);
+    }
+
+    [Fact]
+    public void NegativeDimensionsAreArgumentErrorsBeforeAllocation()
+    {
+        double[] xy = { 0, 0, 2, 0, 2, 2, 0, 2 };
+        Assert.Throws<ArgumentException>(() =>
+            Rasterizer.Rasterize(xy, new long[] { 0, 4 }, new byte[] { 0 }, new[] { 0 }, new Transform(0, 10, 1, 1), -4, 10));
+    }
+}

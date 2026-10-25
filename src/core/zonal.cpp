@@ -250,6 +250,16 @@ int fz_zonal_f64(const double* raster, const int32_t* mask, fz_shape s, int32_t 
     return fz::zonal_impl(raster, mask, s, n_zones, nodata, out, opt);
 }
 
+int fz_zonal_i32(const int32_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones, int32_t nodata,
+                 fz_stats* out, const fz_options* opt) {
+    return fz::zonal_impl(raster, mask, s, n_zones, nodata, out, opt);
+}
+
+int fz_zonal_u8(const uint8_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones, uint8_t nodata,
+                fz_stats* out, const fz_options* opt) {
+    return fz::zonal_impl(raster, mask, s, n_zones, nodata, out, opt);
+}
+
 int fz_zonal_mean_fallback_f32(const float* raster, fz_shape s, float nodata, const fz_stats* stats, int32_t n_zones,
                                const int32_t* centroid_row, const int32_t* centroid_col, double* mean_out) {
     return fz::mean_fallback_impl(raster, s, nodata, stats, n_zones, centroid_row, centroid_col, mean_out);
@@ -258,6 +268,18 @@ int fz_zonal_mean_fallback_f32(const float* raster, fz_shape s, float nodata, co
 int fz_zonal_mean_fallback_f64(const double* raster, fz_shape s, double nodata, const fz_stats* stats,
                                int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
                                double* mean_out) {
+    return fz::mean_fallback_impl(raster, s, nodata, stats, n_zones, centroid_row, centroid_col, mean_out);
+}
+
+int fz_zonal_mean_fallback_i32(const int32_t* raster, fz_shape s, int32_t nodata, const fz_stats* stats,
+                               int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
+                               double* mean_out) {
+    return fz::mean_fallback_impl(raster, s, nodata, stats, n_zones, centroid_row, centroid_col, mean_out);
+}
+
+int fz_zonal_mean_fallback_u8(const uint8_t* raster, fz_shape s, uint8_t nodata, const fz_stats* stats,
+                              int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
+                              double* mean_out) {
     return fz::mean_fallback_impl(raster, s, nodata, stats, n_zones, centroid_row, centroid_col, mean_out);
 }
 
@@ -278,6 +300,13 @@ int fz_zonal_majority_f64(const double* raster, const int32_t* mask, fz_shape s,
 int fz_zonal_majority_i32(const int32_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones, int32_t nodata,
                           const int32_t* centroid_row, const int32_t* centroid_col, double* value_out,
                           uint8_t* has_value_out, const fz_options* opt) {
+    return fz::majority_impl(raster, mask, s, n_zones, nodata, centroid_row, centroid_col, value_out, has_value_out,
+                             opt);
+}
+
+int fz_zonal_majority_u8(const uint8_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones, uint8_t nodata,
+                         const int32_t* centroid_row, const int32_t* centroid_col, double* value_out,
+                         uint8_t* has_value_out, const fz_options* opt) {
     return fz::majority_impl(raster, mask, s, n_zones, nodata, centroid_row, centroid_col, value_out, has_value_out,
                              opt);
 }

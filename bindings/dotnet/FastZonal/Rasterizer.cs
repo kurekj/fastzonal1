@@ -8,6 +8,7 @@ public static unsafe class Rasterizer
     public static int[] Rasterize(ReadOnlySpan<double> xy, ReadOnlySpan<long> ringStart, ReadOnlySpan<byte> ringIsHole,
         ReadOnlySpan<int> ringZone, Transform t, int width, int height, Options? options = null)
     {
+        if (width <= 0 || height <= 0) throw new ArgumentException("width and height must be positive");
         var mask = new int[checked((long)width * height)];
         Rasterize(xy, ringStart, ringIsHole, ringZone, t, width, height, mask, options);
         return mask;

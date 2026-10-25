@@ -92,6 +92,24 @@ public static unsafe class Zonal
         return value;
     }
 
+    public static double[] Majority(ReadOnlySpan<double> raster, ReadOnlySpan<int> mask, int width, int height,
+        int nZones, double nodata, ReadOnlySpan<int> centroidRow, ReadOnlySpan<int> centroidCol, out bool[] hasValue,
+        Options? options = null)
+    {
+        var s = Shape(width, height, raster.Length, mask.Length);
+        if (nZones <= 0) throw new ArgumentException("nZones must be positive");
+        CheckCentroids(centroidRow, centroidCol, nZones);
+        var value = new double[nZones];
+        var has = new byte[nZones];
+        var opt = (options ?? Options.Default).ToNative();
+        fixed (double* pr = raster) fixed (int* pm = mask) fixed (int* prow = centroidRow) fixed (int* pcol = centroidCol)
+        fixed (double* pv = value) fixed (byte* ph = has)
+            Native.Check(Native.fz_zonal_majority_f64(pr, pm, s, nZones, nodata, centroidRow.IsEmpty ? null : prow,
+                centroidCol.IsEmpty ? null : pcol, pv, ph, &opt));
+        hasValue = Array.ConvertAll(has, b => b != 0);
+        return value;
+    }
+
     public static double[] Majority(ReadOnlySpan<int> raster, ReadOnlySpan<int> mask, int width, int height,
         int nZones, int nodata, ReadOnlySpan<int> centroidRow, ReadOnlySpan<int> centroidCol, out bool[] hasValue,
         Options? options = null)

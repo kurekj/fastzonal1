@@ -71,4 +71,6 @@ tables.
 
 ## Licence
 
-MIT, see `LICENSE`. Cite with `CITATION.cff`.
+The code is MIT, see `LICENSE`. The benchmark fixtures are derived data with their own terms
+(GEDTM30 and HydroBASINS CC BY 4.0, Copernicus Land Monitoring Service open access with
+attribution), recorded per file in `benchmarks/fixtures/manifest.json`. Cite with `CITATION.cff`.

@@ -341,3 +341,41 @@ TEST_CASE("invalid mask leaves every output untouched") {
     REQUIRE(val[1] == -5.0);
     REQUIRE(has[1] == 7);
 }
+
+
+// ---- integer rasters (class codes, byte land cover) ----
+
+TEST_CASE("i32 and u8 statistics and majority") {
+    std::vector<int32_t> r32{3, 3, 1, 1, 5, 5, 5, 2, 7, 7, 8, 8, 0, 0, 0, 0};
+    std::vector<uint8_t> r8{3, 3, 1, 1, 5, 5, 5, 2, 7, 7, 8, 8, 0, 0, 0, 0};
+    auto mask = mask_two_zones();
+    auto o = serial();
+    std::vector<fz_stats> a(2), b(2);
+    REQUIRE(fz_zonal_i32(r32.data(), mask.data(), kShape, 2, -1, a.data(), &o) == FZ_OK);
+    REQUIRE(fz_zonal_u8(r8.data(), mask.data(), kShape, 2, 255, b.data(), &o) == FZ_OK);
+    REQUIRE(a[0].count == 8);
+    REQUIRE(a[0].sum == 25.0);
+    REQUIRE(b[0].sum == 25.0);
+    REQUIRE(a[1].max == 8.0);
+    std::vector<double> val(2);
+    std::vector<uint8_t> has(2);
+    REQUIRE(fz_zonal_majority_u8(r8.data(), mask.data(), kShape, 2, 255, nullptr, nullptr, val.data(), has.data(),
+                                 &o) == FZ_OK);
+    REQUIRE(val[0] == 5.0);
+    REQUIRE(val[1] == 7.0);
+    // a u8 NoData of 0 excludes the zeros
+    std::vector<int32_t> all0(16, 0);
+    REQUIRE(fz_zonal_u8(r8.data(), all0.data(), kShape, 1, 0, b.data(), &o) == FZ_OK);
+    REQUIRE(b[0].count == 12);
+    std::vector<double> mean(1);
+    REQUIRE(fz_zonal_mean_fallback_u8(r8.data(), kShape, 0, b.data(), 1, nullptr, nullptr, mean.data()) == FZ_OK);
+    REQUIRE(mean[0] == 55.0 / 12.0);
+}
+
+TEST_CASE("zero zones are rejected") {
+    std::vector<float> r(16, 1.0f);
+    std::vector<int32_t> mask(16, -1);
+    std::vector<fz_stats> st(1);
+    auto o = serial();
+    REQUIRE(fz_zonal_f32(r.data(), mask.data(), kShape, 0, kNoData, st.data(), &o) == FZ_ERR_ARG);
+}

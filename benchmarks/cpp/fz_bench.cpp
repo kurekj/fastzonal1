@@ -98,9 +98,11 @@ int main(int argc, char** argv) {
     opt.threads = serial ? 1 : a.threads;
     opt.raster_mode = FZ_RASTER_COMPAT;
     opt.band_rows = a.band_rows;
+    const auto load0 = std::chrono::steady_clock::now();
     const fzio::Raster raster = fzio::read_raster(a.fixture, a.raster);
     const fzio::Zones zones = fzio::read_zones(a.fixture, a.zones);
     const fzio::Centroids centroids = fzio::read_centroids(a.fixture, a.zones, a.raster, zones.n_zones);
+    const double load_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - load0).count();
     if (a.op != "rasterize" && centroids.empty()) {
         std::cerr << "no centroid file for " << a.zones << " on " << a.raster << "; the reference fallback needs it\n";
         return 2;
@@ -140,25 +142,33 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::vector<int32_t> mask(n);
+    std::vector<int32_t> mask;
     if (a.op != "rasterize") {
+        mask.resize(n);
         check(fz_rasterize(zones.xy.data(), zones.ring_start.data(), zones.ring_is_hole.data(), zones.ring_zone.data(),
                            zones.n_rings(), t, shape, mask.data(), &opt), "rasterize");
     }
     const std::string fixture_id = fzio::read_fixture_meta(a.fixture).id;
     const std::string rung = serial ? "fastzonal-serial" : "fastzonal-openmp";
+    char loadbuf[64];
+    std::snprintf(loadbuf, sizeof loadbuf, "%.17g", load_seconds);
     const std::string tail = "," + a.zones + "," + a.raster + "," + (a.op == "ratio" ? a.den : "") + "," +
                              std::to_string(nz) + "," + std::to_string(n) + "," + std::to_string(effective_threads) +
-                             "," + std::to_string(a.band_rows) + "\n";
+                             "," + std::to_string(a.band_rows) + "," + loadbuf + "\n";
     std::string lines;
     for (int rep = -1; rep < a.reps; ++rep) {
         double checksum = 0.0;
         // output buffers are allocated inside the timed region, as the managed rungs allocate theirs
+        // (for rasterize that is the mask itself, first-touch included)
         std::vector<fz_stats> stats;
         std::vector<double> values;
         std::vector<uint8_t> has;
+        if (a.op == "rasterize") {
+            std::vector<int32_t>().swap(mask);
+        }
         const auto t0 = std::chrono::steady_clock::now();
         if (a.op == "rasterize") {
+            mask.resize(n);
             check(fz_rasterize(zones.xy.data(), zones.ring_start.data(), zones.ring_is_hole.data(),
                                zones.ring_zone.data(), zones.n_rings(), t, shape, mask.data(), &opt), "rasterize");
             const auto t1 = std::chrono::steady_clock::now();
@@ -230,7 +240,7 @@ int main(int argc, char** argv) {
     }
     std::ofstream out(a.out, std::ios::app);
     if (!has_header)
-        out << "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows\n";
+        out << "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows,load_seconds\n";
     out << lines;
     std::cout << lines;
     return 0;

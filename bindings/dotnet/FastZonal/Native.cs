@@ -28,10 +28,12 @@ public static unsafe class Native
         }
         var baseDir = AppContext.BaseDirectory;
         var rid = RuntimeInformation.RuntimeIdentifier;
+        var arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+        var osPrefix = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
         foreach (var candidate in new[]
                  {
                      Path.Combine(baseDir, "runtimes", rid, "native", file),
-                     Path.Combine(baseDir, "runtimes", OperatingSystem.IsWindows() ? "win-x64" : "linux-x64", "native", file),
+                     Path.Combine(baseDir, "runtimes", $"{osPrefix}-{arch}", "native", file),
                      Path.Combine(baseDir, file),
                  })
         {

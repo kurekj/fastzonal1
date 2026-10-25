@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use fastzonal, please cite it as below."
-title: "fastzonal: zonal statistics and terrain indices over polygon units"
+title: "fastzonal: zonal statistics and polygon rasterisation over raster grids"
 version: 0.1.0
 date-released: 2026-10-25
 license: MIT

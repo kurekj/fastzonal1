@@ -48,8 +48,7 @@ if(FASTZONAL_WITH_OPENMP)
     target_link_libraries(fastzonal PUBLIC OpenMP::OpenMP_CXX)
 endif()
 if(FASTZONAL_WITH_CUDA)
-    enable_language(CUDA)
-    target_compile_definitions(fastzonal PRIVATE FASTZONAL_WITH_CUDA)
+    message(FATAL_ERROR "FASTZONAL_WITH_CUDA: the CUDA backend is not implemented in this version; configure with it OFF")
 endif()
 
 install(TARGETS fastzonal EXPORT fastzonalTargets

@@ -1,7 +1,7 @@
 # Reproducible CPU environment for fastzonal: builds the library with OpenMP, runs every test
 # suite, and offers the benchmark runner as the entry point. CUDA is deliberately not included.
 #
-#   docker build -t fastzonal:bench .
+#   docker build --build-arg GIT_COMMIT=$(git rev-parse HEAD) -t fastzonal:bench .
 #   docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" fastzonal:bench --quick
 #
 # The conda environment comes from conda-lock.yml (generated from environment.yml), so every
@@ -26,6 +26,9 @@ ENV PATH=/opt/conda/envs/fastzonal/bin:$PATH \
     CXX=/opt/conda/envs/fastzonal/bin/x86_64-conda-linux-gnu-g++ \
     DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
 
+ARG GIT_COMMIT=unknown
+ENV FZ_GIT_COMMIT=$GIT_COMMIT
+LABEL org.opencontainers.image.revision=$GIT_COMMIT
 COPY . .
 RUN cmake --preset release && cmake --build --preset release && ctest --preset release --output-on-failure \
     && cmake --build --preset release --target dotnet_native_copy \

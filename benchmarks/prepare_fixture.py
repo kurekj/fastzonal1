@@ -132,6 +132,10 @@ def main(argv=None):
     new_crs = raster[3] if raster else zones[2]
     if raster and zones and raster[3] != zones[2]:
         sys.exit(f"CRS mismatch: raster {raster[3]} vs zones {zones[2]}")
+    if zones:
+        for i, g in enumerate(zones[0]):
+            if g is None or g.is_empty:
+                sys.exit(f"zone {i} has an empty or null geometry; remove it from the layer first")
     # every header already in the fixture must agree with the new data before anything is written
     for hj in sorted(out.glob("raster_*.json")) + sorted(out.glob("zones_*.json")):
         meta = json.loads(hj.read_text(encoding="utf-8"))

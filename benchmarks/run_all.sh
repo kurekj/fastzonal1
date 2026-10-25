@@ -12,6 +12,19 @@
 # error when a rung's checksum differs from the baseline's for the same workload. The band size
 # (default 16 rows) is passed to every rung that has one and recorded in each CSV line.
 set -euo pipefail
+# Thread placement: OpenMP workers bind to cores in order, and every run with at most one socket's
+# worth of threads is pinned to NUMA node 0 (memory too) so that the serial rungs, the C# rungs and
+# the small thread counts are not scattered across sockets. Larger thread counts use both sockets.
+export OMP_PROC_BIND=close OMP_PLACES=cores
+node0_cpus=$( (lscpu -p=CPU,NODE 2>/dev/null | grep -v '^#' | awk -F, '$2==0' | wc -l) || echo 0 )
+pin() {  # pin <threads> <command...>
+    local t="$1"; shift
+    if command -v numactl >/dev/null 2>&1 && [ "$node0_cpus" -gt 0 ] && [ "$t" -le "$node0_cpus" ]; then
+        numactl --cpunodebind=0 --membind=0 "$@"
+    else
+        "$@"
+    fi
+}
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 results="$repo/benchmarks/results"
 fixtures="$repo/benchmarks/fixtures"
@@ -70,18 +83,26 @@ record = {
     "cores": os.cpu_count(),
     "mem_kb": next((int(l.split()[1]) for l in open("/proc/meminfo") if l.startswith("MemTotal")), None),
     "compiler": sh(f"{cache.get('CMAKE_CXX_COMPILER', 'g++')} --version | head -1"), "cmake": sh("cmake --version | head -1"),
-    "dotnet": sh("dotnet --version"), "git_commit": sh(f"git -C '{repo}' rev-parse HEAD"),
-    "git_dirty": bool(sh(f"git -C '{repo}' status --porcelain")),
+    "dotnet": sh("dotnet --version"), "git_commit": sh(f"git -C '{repo}' rev-parse HEAD") or os.environ.get("FZ_GIT_COMMIT", ""),
+    "git_dirty": bool(sh(f"git -C '{repo}' status --porcelain --untracked-files=no")),
+    "cpu_governor": (open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor").read().strip()
+                     if os.path.exists("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") else None),
+    "numa_node0_cpus": sh("lscpu -p=CPU,NODE | grep -v '^#' | awk -F, '$2==0' | wc -l"),
+    "omp_proc_bind": os.environ.get("OMP_PROC_BIND"), "omp_places": os.environ.get("OMP_PLACES"),
+    "omp_thread_limit": os.environ.get("OMP_THREAD_LIMIT"),
     "fz_version": sh(f"grep -m1 'project(fastzonal VERSION' '{repo}/CMakeLists.txt'").split("VERSION")[-1].split()[0] if True else "",
     "cmake_cache": cache, "extra_flags": "-ffp-contract=off (always), OpenMP",
     "band_rows": int(band_rows), "reps": int(reps), "threads": threads.split(), "quick": quick == "1",
     "fixtures_dir": fixtures,
-    "fixtures_manifest_sha256": hashlib.sha256(open(manifest, "rb").read()).hexdigest() if os.path.exists(manifest) else None,
+    # hash of the fixture, expected and generated file tables only, so editing the archive entry of
+    # the manifest later does not break the link between a run and its inputs
+    "fixtures_manifest_sha256": hashlib.sha256(json.dumps({k: json.load(open(manifest)).get(k) for k in ("fixtures", "expected", "generated")}, sort_keys=True).encode()).hexdigest() if os.path.exists(manifest) else None,
     "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
 }
 if os.path.exists(out):
     old = json.load(open(out))
-    for key in ("git_commit", "band_rows", "reps", "fixtures_manifest_sha256", "cpu"):
+    for key in ("git_commit", "band_rows", "reps", "fixtures_manifest_sha256", "cpu", "hostname", "compiler", "dotnet",
+                "cmake_cache", "omp_proc_bind", "omp_places", "omp_thread_limit"):
         if old.get(key) != record.get(key):
             sys.exit(f"cannot resume stamp {record['stamp']}: {key} changed ({old.get(key)!r} -> {record.get(key)!r})")
     sys.exit(0)
@@ -158,17 +179,18 @@ for p in "${points[@]}"; do
         fi
         case "$rung" in
             fastzonal-serial)
-                "$fz_bench" "$fxdir" "$op" "$zones" "$raster" ${den:+--den "$den"} --backend serial --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
+                pin 1 "$fz_bench" "$fxdir" "$op" "$zones" "$raster" ${den:+--den "$den"} --backend serial --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
             fastzonal-openmp)
-                "$fz_bench" "$fxdir" "$op" "$zones" "$raster" ${den:+--den "$den"} --backend openmp --threads "$threads" --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
+                pin "$threads" "$fz_bench" "$fxdir" "$op" "$zones" "$raster" ${den:+--den "$den"} --backend openmp --threads "$threads" --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
             *)
-                dotnet "$fzbench_dll" bench "$fxdir" "$rung" "$op" "$zones" "$raster" ${den:+--den "$den"} --threads "$threads" --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
+                pin "$threads" dotnet "$fzbench_dll" bench "$fxdir" "$rung" "$op" "$zones" "$raster" ${den:+--den "$den"} --threads "$threads" --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
         esac
         done_n=$((done_n + 1)); measured_n=$((measured_n + 1))
         write_status "$label"
     done
     # checksum guard: every repetition of every rung of this workload must agree with the
-    # baseline (relative 1e-6; non-finite values never pass)
+    # baseline (exactly for the integer results of rasterize and majority, relative 1e-6 for the
+    # float32 paths of mean and ratio; non-finite values never pass)
     python3 - "$raw" "$fx" "$op" "$zones" "$raster" "$den" <<'EOF'
 import csv, math, sys
 raw, fx, op, zones, raster, den = sys.argv[1:7]
@@ -179,8 +201,9 @@ if not base:
 b = base[0]
 if not math.isfinite(b):
     print(f"non-finite baseline checksum for {fx} {op} {zones} {raster} {den}", file=sys.stderr); sys.exit(3)
+tol = 0.0 if op in ("rasterize", "majority") else 1e-6 * max(1.0, abs(b))
 bad = [(r["rung"], r["threads"], r["rep"], r["checksum"]) for r in rows
-       if not math.isfinite(float(r["checksum"])) or abs(float(r["checksum"]) - b) > 1e-6 * max(1.0, abs(b))]
+       if not math.isfinite(float(r["checksum"])) or abs(float(r["checksum"]) - b) > tol]
 if bad:
     print(f"checksum mismatch for {fx} {op} {zones} {raster} {den}: baseline {b!r}, offenders {bad}", file=sys.stderr)
     sys.exit(3)

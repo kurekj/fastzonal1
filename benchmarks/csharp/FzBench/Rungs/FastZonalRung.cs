@@ -25,7 +25,7 @@ public sealed class FastZonalRung : IRung
         };
     }
 
-    public string Name => _serial ? "fastzonal-serial" : "fastzonal-openmp";
+    public string Name => _serial ? "fastzonal-dotnet-serial" : "fastzonal-dotnet";
 
     /// <summary>The library never uses more workers than bands.</summary>
     public int EffectiveThreads(int height)

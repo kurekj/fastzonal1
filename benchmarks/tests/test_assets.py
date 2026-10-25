@@ -5,29 +5,29 @@ from pathlib import Path
 
 BENCH = Path(__file__).resolve().parents[1]
 
-HEADER = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows\n"
-RAW = HEADER + """biebrza_upper,mean,csharp-baseline,1,0,0.100,10.0,grid500,dem30,,4178,2250412,1,16
-biebrza_upper,mean,csharp-baseline,1,1,0.120,10.0,grid500,dem30,,4178,2250412,1,16
-biebrza_upper,mean,csharp-baseline,1,2,0.110,10.0,grid500,dem30,,4178,2250412,1,16
-biebrza_upper,mean,csharp-optimised,1,0,0.050,10.0,grid500,dem30,,4178,2250412,1,16
-biebrza_upper,mean,csharp-optimised,1,1,0.060,10.0,grid500,dem30,,4178,2250412,1,16
-biebrza_upper,mean,csharp-optimised,8,0,0.010,10.0,grid500,dem30,,4178,2250412,8,16
-biebrza_upper,mean,csharp-optimised,8,1,0.012,10.0,grid500,dem30,,4178,2250412,8,16
-biebrza_upper,mean,fastzonal-openmp,1,0,0.020,10.0000001,grid500,dem30,,4178,2250412,1,16
-biebrza_upper,mean,fastzonal-openmp,1,1,0.022,10.0000001,grid500,dem30,,4178,2250412,1,16
-biebrza_upper,mean,fastzonal-openmp,8,0,0.004,10.0000001,grid500,dem30,,4178,2250412,8,16
-biebrza_upper,mean,fastzonal-openmp,8,1,0.005,10.0000001,grid500,dem30,,4178,2250412,8,16
-biebrza_upper,mean,fastzonal-openmp,112,0,0.004,10.0000001,grid500,dem30,,4178,2250412,88,16
-biebrza_upper,mean,fastzonal-serial,1,0,0.021,10.0000001,grid500,dem30,,4178,2250412,1,16
-biebrza_upper,mean,csharp-baseline,1,0,0.400,20.0,grid100,dem30,,100043,2250412,1,16
-biebrza_upper,mean,csharp-baseline,1,1,0.420,20.0,grid100,dem30,,100043,2250412,1,16
-biebrza_upper,mean,fastzonal-openmp,8,0,0.010,20.0000001,grid100,dem30,,100043,2250412,8,16
-biebrza_upper,mean,fastzonal-openmp,8,1,0.011,20.0000001,grid100,dem30,,100043,2250412,8,16
-biebrza_upper,rasterize,csharp-baseline,1,0,1.000,5000.0,grid100,dem30,,100043,2250412,1,16
-biebrza_upper,rasterize,fastzonal-openmp,8,0,0.100,5000.0,grid100,dem30,,100043,2250412,8,16
-biebrza_upper,ratio,csharp-baseline,1,0,0.300,30.0,grid500,dem30,dem60,4178,2250412,1,16
-biebrza_upper,ratio,fastzonal-openmp,8,0,0.030,30.0000002,grid500,dem30,dem60,4178,2250412,8,16
-gradascica,mean,fastzonal-openmp,8,0,0.030,7.0,grid100,dem30,,18619,408682,8,16
+HEADER = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows,load_seconds\n"
+RAW = HEADER + """biebrza_upper,mean,csharp-baseline,1,0,0.100,10.0,grid500,dem30,,4178,2250412,1,16,0.5
+biebrza_upper,mean,csharp-baseline,1,1,0.120,10.0,grid500,dem30,,4178,2250412,1,16,0.5
+biebrza_upper,mean,csharp-baseline,1,2,0.110,10.0,grid500,dem30,,4178,2250412,1,16,0.5
+biebrza_upper,mean,csharp-optimised,1,0,0.050,10.0,grid500,dem30,,4178,2250412,1,16,0.5
+biebrza_upper,mean,csharp-optimised,1,1,0.060,10.0,grid500,dem30,,4178,2250412,1,16,0.5
+biebrza_upper,mean,csharp-optimised,8,0,0.010,10.0,grid500,dem30,,4178,2250412,8,16,0.5
+biebrza_upper,mean,csharp-optimised,8,1,0.012,10.0,grid500,dem30,,4178,2250412,8,16,0.5
+biebrza_upper,mean,fastzonal-openmp,1,0,0.020,10.0000001,grid500,dem30,,4178,2250412,1,16,0.5
+biebrza_upper,mean,fastzonal-openmp,1,1,0.022,10.0000001,grid500,dem30,,4178,2250412,1,16,0.5
+biebrza_upper,mean,fastzonal-openmp,8,0,0.004,10.0000001,grid500,dem30,,4178,2250412,8,16,0.5
+biebrza_upper,mean,fastzonal-openmp,8,1,0.005,10.0000001,grid500,dem30,,4178,2250412,8,16,0.5
+biebrza_upper,mean,fastzonal-openmp,112,0,0.004,10.0000001,grid500,dem30,,4178,2250412,88,16,0.5
+biebrza_upper,mean,fastzonal-serial,1,0,0.021,10.0000001,grid500,dem30,,4178,2250412,1,16,0.5
+biebrza_upper,mean,csharp-baseline,1,0,0.400,20.0,grid100,dem30,,100043,2250412,1,16,0.5
+biebrza_upper,mean,csharp-baseline,1,1,0.420,20.0,grid100,dem30,,100043,2250412,1,16,0.5
+biebrza_upper,mean,fastzonal-openmp,8,0,0.010,20.0000001,grid100,dem30,,100043,2250412,8,16,0.5
+biebrza_upper,mean,fastzonal-openmp,8,1,0.011,20.0000001,grid100,dem30,,100043,2250412,8,16,0.5
+biebrza_upper,rasterize,csharp-baseline,1,0,1.000,5000.0,grid100,dem30,,100043,2250412,1,16,0.5
+biebrza_upper,rasterize,fastzonal-openmp,8,0,0.100,5000.0,grid100,dem30,,100043,2250412,8,16,0.5
+biebrza_upper,ratio,csharp-baseline,1,0,0.300,30.0,grid500,dem30,dem60,4178,2250412,1,16,0.5
+biebrza_upper,ratio,fastzonal-openmp,8,0,0.030,30.0000002,grid500,dem30,dem60,4178,2250412,8,16,0.5
+gradascica,mean,fastzonal-openmp,8,0,0.030,7.0,grid100,dem30,,18619,408682,8,16,0.5
 """
 
 
@@ -56,6 +56,9 @@ def test_make_paper_assets_from_raw_csv(tmp_path):
     assert "csharp-baseline" in ladder and "fastzonal-openmp" in ladder and "\\toprule" in ladder
     assert summary["checksum"]["mismatches"] == []
     assert summary["checksum"]["workloads_without_baseline"] == ["gradascica|mean|grid100|dem30|"]
+    assert summary["variability_warnings"] == [{"workload": "biebrza_upper|mean|grid500|dem30|", "openmp_1_median": 0.021,
+                                               "serial_median": 0.021, "ratio": 1.0}] or summary["variability_warnings"] == []
+    assert pt[key]["load_seconds"] == 0.5
 
 
 def test_checksum_mismatch_in_any_repetition_is_reported(tmp_path):

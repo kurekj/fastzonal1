@@ -31,7 +31,7 @@ public class RungParityTests
 
     public static IEnumerable<object[]> Cases()
     {
-        foreach (var rung in new[] { "csharp-optimised", "fastzonal-openmp", "fastzonal-serial" })
+        foreach (var rung in new[] { "csharp-optimised", "fastzonal-dotnet", "fastzonal-dotnet-serial" })
         {
             yield return new object[] { rung, "synthetic_small", "rect", "synth", "synth" };
             yield return new object[] { rung, "leze_micro", "grid250", "dem30", "dem30" };
@@ -64,9 +64,9 @@ public class RungParityTests
     {
         var rung = Program.MakeRung("csharp-optimised", threads: 2);
         Assert.Equal(2, rung.EffectiveThreads(200));
-        var capped = Program.MakeRung("fastzonal-openmp", threads: 112, bandRows: 16);
+        var capped = Program.MakeRung("fastzonal-dotnet", threads: 112, bandRows: 16);
         Assert.Equal(13, capped.EffectiveThreads(200));  // 200 rows / 16 = 13 bands
-        Assert.Equal(1, Program.MakeRung("fastzonal-serial", threads: 112).EffectiveThreads(200));
+        Assert.Equal(1, Program.MakeRung("fastzonal-dotnet-serial", threads: 112).EffectiveThreads(200));
     }
 
     private static bool NativeAvailable()

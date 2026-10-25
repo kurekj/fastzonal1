@@ -12,7 +12,9 @@
  * - The library never reads outside the arrays it is given, but it cannot know their sizes: the caller
  *   guarantees that every raster and mask holds width * height elements, every per-zone array n_zones
  *   elements, and every ring offset addresses points inside xy.
- * - A NULL fz_options pointer means the defaults of fz_options_default. */
+ * - A NULL fz_options pointer means the defaults of fz_options_default.
+ * - n_zones must be at least 1 (an empty zone set is FZ_ERR_ARG; rasterising with n_rings == 0 is allowed and
+ *   writes -1 everywhere). */
 #ifndef FASTZONAL_H
 #define FASTZONAL_H
 
@@ -142,6 +144,10 @@ FZ_API int fz_zonal_f32(const float* raster, const int32_t* mask, fz_shape s, in
                         fz_stats* out, const fz_options* opt);
 FZ_API int fz_zonal_f64(const double* raster, const int32_t* mask, fz_shape s, int32_t n_zones, double nodata,
                         fz_stats* out, const fz_options* opt);
+FZ_API int fz_zonal_i32(const int32_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones, int32_t nodata,
+                        fz_stats* out, const fz_options* opt);
+FZ_API int fz_zonal_u8(const uint8_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones, uint8_t nodata,
+                       fz_stats* out, const fz_options* opt);
 
 /* Mean per zone with the reference fallback: sum / count when count > 0; otherwise the raster value at
  * (centroid_row[z], centroid_col[z]) when that cell is inside the raster and not NoData; otherwise 0.0.
@@ -153,6 +159,12 @@ FZ_API int fz_zonal_mean_fallback_f32(const float* raster, fz_shape s, float nod
 FZ_API int fz_zonal_mean_fallback_f64(const double* raster, fz_shape s, double nodata, const fz_stats* stats,
                                       int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
                                       double* mean_out);
+FZ_API int fz_zonal_mean_fallback_i32(const int32_t* raster, fz_shape s, int32_t nodata, const fz_stats* stats,
+                                      int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
+                                      double* mean_out);
+FZ_API int fz_zonal_mean_fallback_u8(const uint8_t* raster, fz_shape s, uint8_t nodata, const fz_stats* stats,
+                                     int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
+                                     double* mean_out);
 
 /* Most frequent value per zone (ties resolve to the smallest value). NoData and NaN cells are skipped.
  * A zone without cells takes the value at its centroid cell when centroid arrays are given (both or neither,
@@ -167,10 +179,16 @@ FZ_API int fz_zonal_majority_f64(const double* raster, const int32_t* mask, fz_s
 FZ_API int fz_zonal_majority_i32(const int32_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones,
                                  int32_t nodata, const int32_t* centroid_row, const int32_t* centroid_col,
                                  double* value_out, uint8_t* has_value_out, const fz_options* opt);
+FZ_API int fz_zonal_majority_u8(const uint8_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones,
+                                uint8_t nodata, const int32_t* centroid_row, const int32_t* centroid_col,
+                                double* value_out, uint8_t* has_value_out, const fz_options* opt);
 
 /* Statistics of the cell-wise ratio num / den of two rasters on the same grid. Cells where either raster is
  * NoData or NaN, or where |den| < eps, are excluded; eps must be finite and positive (the reference uses
- * 1e-12), so a zero denominator is never divided. out as in fz_zonal_*. */
+ * 1e-12), so a zero denominator is never divided. out as in fz_zonal_*. The quotient itself is never tested
+ * against a NoData value: a computed ratio equal to the caller's sentinel is kept as a number (the SpongeGIS
+ * reference forms the ratio raster first and then drops cells equal to -9999; callers that need that
+ * behaviour must form the ratio raster themselves and use fz_zonal_*). */
 FZ_API int fz_zonal_ratio_f32(const float* num, const float* den, const int32_t* mask, fz_shape s, int32_t n_zones,
                               float nodata_num, float nodata_den, double eps, fz_stats* out, const fz_options* opt);
 FZ_API int fz_zonal_ratio_f64(const double* num, const double* den, const int32_t* mask, fz_shape s,

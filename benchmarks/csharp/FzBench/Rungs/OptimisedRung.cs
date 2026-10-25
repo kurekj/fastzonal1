@@ -4,15 +4,17 @@ using NetTopologySuite.Geometries;
 namespace FzBench.Rungs;
 
 /// <summary>The reference algorithms rewritten the way a careful C# developer would: float[]
-/// rasters, int[] masks, no per-row allocations, and Parallel.For over bands of rows with
-/// per-band partial results merged in ascending band order, so the result does not depend on
-/// the thread count. Same semantics as the baseline (COMPAT rasterisation, NoData -9999 or NaN,
-/// centroid fallback, smallest-value ties); the summation order differs from the baseline's
-/// single sequential pass, so means agree to rounding, not bit for bit.</summary>
+/// rasters, int[] masks, flat ring arrays prepared once per zone set (outside the timed region,
+/// like the library's inputs), specialised loops without delegates, and Parallel.For over bands
+/// of rows with per-band partial results merged in ascending band order, so the result does not
+/// depend on the thread count. Same semantics as the baseline (COMPAT rasterisation, NoData -9999
+/// or NaN, centroid fallback, smallest-value ties); the summation order differs from the
+/// baseline's single sequential pass, so means agree to rounding, not bit for bit.</summary>
 public sealed class OptimisedRung : IRung
 {
     private readonly int _bandRows;
     private readonly int _threads;
+    private readonly Dictionary<(string Zones, string Raster), List<PolyRing>> _rings = new();
 
     public OptimisedRung(int threads, int bandRows = 16)
     {
@@ -21,8 +23,9 @@ public sealed class OptimisedRung : IRung
     }
 
     public string Name => "csharp-optimised";
-    public int EffectiveThreads(int height) => Math.Min(_threads, (height + _bandRows - 1) / _bandRows);
+    public int EffectiveThreads(int height) => Math.Min(_threads, Bands(height));
 
+    private int Bands(int height) => (height + _bandRows - 1) / _bandRows;
     private ParallelOptions Par => new() { MaxDegreeOfParallelism = _threads };
 
     // ---- rasterisation --------------------------------------------------------------------
@@ -35,14 +38,26 @@ public sealed class OptimisedRung : IRung
         public required int StartRow, EndRow, StartCol, EndCol;
     }
 
+    /// <summary>Flat ring arrays with pixel bounding boxes, prepared once per (zones, raster)
+    /// and reused by every repetition; the warm-up repetition pays for it.</summary>
+    private List<PolyRing> Rings(Fixture f, string zones, string raster)
+    {
+        var key = (zones, raster);
+        if (_rings.TryGetValue(key, out var cached)) return cached;
+        var r = f.Rasters[raster];
+        var rings = PrepareRings(f.Zones[zones].Geometries, r.Transform, r.Width, r.Height);
+        _rings[key] = rings;
+        return rings;
+    }
+
     public object Rasterize(Fixture f, string zones, string raster)
     {
         var r = f.Rasters[raster];
         var t = r.Transform;
         int width = r.Width, height = r.Height;
-        var rings = PrepareRings(f.Zones[zones].Geometries, t, width, height);
+        var rings = Rings(f, zones, raster);
         var mask = new int[(long)width * height];
-        int nBands = (height + _bandRows - 1) / _bandRows;
+        int nBands = Bands(height);
         // every band applies, in polygon order, the rings whose row range touches it, so later
         // polygons win exactly as in the reference
         var byBand = new List<int>[nBands];
@@ -163,36 +178,31 @@ public sealed class OptimisedRung : IRung
         }
     }
 
-    private static bool IsNoData(float v) => float.IsNaN(v) || v == -9999f;
-    private static bool IsNoData(double v) => double.IsNaN(v) || v == -9999.0;
-
     public double[] Mean(Fixture f, string zones, string raster, object mask)
     {
         var r = f.Rasters[raster];
         var z = f.Zones[zones];
-        return MeanOf(i => r.Flat[i], IsNoDataAt: i => IsNoData(r.Flat[i]), (int[])mask, r.Width, r.Height, z,
-            r.Transform);
-    }
-
-    private double[] MeanOf(Func<long, double> valueAt, Func<long, bool> IsNoDataAt, int[] mask, int width, int height,
-        ZoneData z, GeoTransform t)
-    {
-        int n = z.ZoneCount;
-        int nBands = (height + _bandRows - 1) / _bandRows;
+        var m = (int[])mask;
+        int width = r.Width, height = r.Height, n = z.ZoneCount;
+        var values = r.Flat;
+        int nBands = Bands(height);
         var partials = new (int[] Zones, double[] Sum, long[] Count)[nBands];
         Parallel.For(0, nBands, Par, () => new Acc(n), (b, _, acc) =>
         {
             long begin = (long)b * _bandRows * width;
             long end = Math.Min((long)height, (long)(b + 1) * _bandRows) * width;
             int prev = -1;
+            var sum = acc.Sum;
+            var count = acc.Count;
             for (long i = begin; i < end; i++)
             {
-                int zone = mask[i];
+                int zone = m[i];
                 if (zone < 0) continue;
                 if (zone != prev) { acc.Touch(zone); prev = zone; }
-                if (IsNoDataAt(i)) continue;
-                acc.Sum[zone] += valueAt(i);
-                acc.Count[zone]++;
+                float v = values[i];
+                if (float.IsNaN(v) || v == -9999f) continue;
+                sum[zone] += v;
+                count[zone]++;
             }
             partials[b] = acc.Flush();
             return acc;
@@ -202,14 +212,15 @@ public sealed class OptimisedRung : IRung
         foreach (var (zs, sums, cs) in partials)  // ascending band order: the fixed merge order
             for (int i = 0; i < zs.Length; i++) { total[zs[i]] += sums[i]; counts[zs[i]] += cs[i]; }
         var result = new double[n];
+        var t = r.Transform;
         for (int zone = 0; zone < n; zone++)
         {
             if (counts[zone] > 0) { result[zone] = total[zone] / counts[zone]; continue; }
             var centroid = z.Geometries[zone].Centroid;
             int col = t.WorldToCol(centroid.X), row = t.WorldToRow(centroid.Y);
             if (col < 0 || col >= width || row < 0 || row >= height) continue;
-            long idx = (long)row * width + col;
-            if (!IsNoDataAt(idx)) result[zone] = valueAt(idx);
+            float cv = values[(long)row * width + col];
+            if (!(float.IsNaN(cv) || cv == -9999f)) result[zone] = cv;
         }
         return result;
     }
@@ -220,7 +231,8 @@ public sealed class OptimisedRung : IRung
         var z = f.Zones[zones];
         var m = (int[])mask;
         int n = z.ZoneCount, width = r.Width, height = r.Height;
-        int nBands = (height + _bandRows - 1) / _bandRows;
+        var values = r.Flat;
+        int nBands = Bands(height);
         var partials = new List<(int Zone, Dictionary<float, int> Counts)>[nBands];
         Parallel.For(0, nBands, Par, () => new Dictionary<float, int>?[n], (b, _, local) =>
         {
@@ -231,8 +243,8 @@ public sealed class OptimisedRung : IRung
             {
                 int zone = m[i];
                 if (zone < 0) continue;
-                float v = r.Flat[i];
-                if (IsNoData(v)) continue;
+                float v = values[i];
+                if (float.IsNaN(v) || v == -9999f) continue;
                 var d = local[zone];
                 if (d == null) { d = local[zone] = new Dictionary<float, int>(); touched.Add(zone); }
                 d[v] = d.TryGetValue(v, out var c) ? c + 1 : 1;
@@ -265,8 +277,8 @@ public sealed class OptimisedRung : IRung
             var centroid = z.Geometries[zone].Centroid;
             int col = r.Transform.WorldToCol(centroid.X), row = r.Transform.WorldToRow(centroid.Y);
             if (col < 0 || col >= width || row < 0 || row >= height) continue;
-            float cv = r.Flat[(long)row * width + col];
-            if (!IsNoData(cv)) result[zone] = cv;
+            float cv = values[(long)row * width + col];
+            if (!(float.IsNaN(cv) || cv == -9999f)) result[zone] = cv;
         }
         return result;
     }
@@ -275,22 +287,66 @@ public sealed class OptimisedRung : IRung
     {
         var a = f.Rasters[num];
         var z = f.Zones[zones];
-        int width = a.Width, height = a.Height;
-        // the ratio raster in double, as the reference forms it (NaN where excluded, and a
-        // computed -9999 is then NoData for the mean, exactly like the reference)
-        var ratio = new double[(long)width * height];
+        var m = (int[])mask;
+        int width = a.Width, height = a.Height, n = z.ZoneCount;
+        var ap = a.Pixels;
         var bp = denOnGrid.Pixels;
-        Parallel.For(0, height, Par, row =>
+        // the ratio raster in double, as the reference forms it (NaN where excluded, and a computed
+        // -9999 is then NoData for the mean, exactly like the reference), band-parallel so the
+        // configured worker limit is the same for the whole operation
+        var ratio = new double[(long)width * height];
+        int nBands = Bands(height);
+        Parallel.For(0, nBands, Par, b =>
         {
-            long rowBase = (long)row * width;
-            for (int col = 0; col < width; col++)
+            int row0 = b * _bandRows, row1 = Math.Min(height, row0 + _bandRows);
+            for (int row = row0; row < row1; row++)
             {
-                long i = rowBase + col;
-                double x = a.Pixels[row, col], y = bp[row, col];
-                ratio[i] = (IsNoData(x) || IsNoData(y) || Math.Abs(y) < 1e-12) ? double.NaN : x / y;
+                long rowBase = (long)row * width;
+                for (int col = 0; col < width; col++)
+                {
+                    double x = ap[row, col], y = bp[row, col];
+                    ratio[rowBase + col] = (double.IsNaN(x) || x == -9999.0 || double.IsNaN(y) || y == -9999.0 ||
+                                            Math.Abs(y) < 1e-12) ? double.NaN : x / y;
+                }
             }
         });
-        return MeanOf(i => ratio[i], i => IsNoData(ratio[i]), (int[])mask, width, height, z, a.Transform);
+        var partials = new (int[] Zones, double[] Sum, long[] Count)[nBands];
+        Parallel.For(0, nBands, Par, () => new Acc(n), (b, _, acc) =>
+        {
+            long begin = (long)b * _bandRows * width;
+            long end = Math.Min((long)height, (long)(b + 1) * _bandRows) * width;
+            int prev = -1;
+            var sum = acc.Sum;
+            var count = acc.Count;
+            for (long i = begin; i < end; i++)
+            {
+                int zone = m[i];
+                if (zone < 0) continue;
+                if (zone != prev) { acc.Touch(zone); prev = zone; }
+                double v = ratio[i];
+                if (double.IsNaN(v) || v == -9999.0) continue;
+                sum[zone] += v;
+                count[zone]++;
+            }
+            partials[b] = acc.Flush();
+            return acc;
+        }, _ => { });
+        var total = new double[n];
+        var counts = new long[n];
+        foreach (var (zs, sums, cs) in partials)
+            for (int i = 0; i < zs.Length; i++) { total[zs[i]] += sums[i]; counts[zs[i]] += cs[i]; }
+        var result = new double[n];
+        var t = a.Transform;
+        for (int zone = 0; zone < n; zone++)
+        {
+            if (counts[zone] > 0) { result[zone] = total[zone] / counts[zone]; continue; }
+            var centroid = z.Geometries[zone].Centroid;
+            int col = t.WorldToCol(centroid.X), row = t.WorldToRow(centroid.Y);
+            if (col < 0 || col >= width || row < 0 || row >= height) continue;
+            double cv = ratio[(long)row * width + col];
+            if (!(double.IsNaN(cv) || cv == -9999.0)) result[zone] = cv;
+        }
+        return result;
     }
 
     public int[] MaskToArray(object mask) => (int[])mask;

@@ -40,12 +40,12 @@ TEST_CASE("fz_bench appends reps lines with the shared columns") {
     REQUIRE(std::system(cmd.c_str()) == 0);
     auto l = lines_of(out);
     REQUIRE(l.size() == 4);  // header + 3 reps
-    REQUIRE(l[0] == "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows");
+    REQUIRE(l[0] == "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows,load_seconds");
     for (size_t i = 1; i < l.size(); ++i) {
-        REQUIRE(fields(l[i]) == 14);
+        REQUIRE(fields(l[i]) == 15);
         REQUIRE(l[i].rfind(omp ? "synthetic_small,mean,fastzonal-openmp,2," : "synthetic_small,mean,fastzonal-serial,1,", 0) == 0);
         // the synthetic raster has 200 rows: 13 bands of 16, so two requested threads are two effective ones
-        REQUIRE(l[i].find(omp ? ",2,16" : ",1,16") != std::string::npos);
+        REQUIRE(l[i].find(omp ? ",2,16," : ",1,16,") != std::string::npos);
     }
     // a second call appends without repeating the header
     REQUIRE(std::system(cmd.c_str()) == 0);

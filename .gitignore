@@ -27,5 +27,8 @@ benchmarks/fixtures/*/
 # native binaries copied for the .NET binding
 bindings/dotnet/FastZonal/runtimes/
 
+# runner progress file
+benchmarks/results/status.json
+
 # logs
 *.log

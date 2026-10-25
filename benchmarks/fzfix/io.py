@@ -96,6 +96,9 @@ def _ring_coords(ring):
 
 def write_zones(json_path, polygons: Sequence, zone_ids: Sequence[int], meta=None, source_ids: Iterable | None = None):
     json_path = Path(json_path)
+    for i, geom in enumerate(polygons):
+        if geom is None or geom.is_empty or not list(_polygon_parts(geom)):
+            raise ValueError(f"zone {i} has no polygonal geometry; every zone needs at least one polygon")
     xy_parts, ring_start, is_hole, ring_zone = [], [0], [], []
     n_points = 0
     for geom, zone in zip(polygons, zone_ids):

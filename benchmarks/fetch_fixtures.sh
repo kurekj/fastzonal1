@@ -26,11 +26,20 @@ if [ -n "$want" ]; then
     got=$(python3 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" "$archive")
     [ "$got" = "$want" ] || { echo "sha256 mismatch: $got != $want" >&2; exit 1; }
 fi
+# extract into a temporary directory and move only the data directories: the archive carries its own
+# copy of manifest.json, and the committed one (with the archive hash) must stay authoritative
+tmp="$(mktemp -d)"
 if tar --help 2>/dev/null | grep -q zstd; then
-    tar --zstd -xf "$archive" -C "$dest"
+    tar --zstd -xf "$archive" -C "$tmp"
 else
-    zstd -dc "$archive" | tar -xf - -C "$dest"
+    zstd -dc "$archive" | tar -xf - -C "$tmp"
 fi
+for d in "$tmp"/*/; do
+    name="$(basename "$d")"
+    rm -rf "${dest:?}/$name"
+    mv "$d" "$dest/$name"
+done
+rm -rf "$tmp"
 # verify every file listed in the manifest: fixtures, the baseline's expected outputs and the
 # generated fixtures (all land under benchmarks/fixtures/<name>/ or benchmarks/fixtures/expected/<name>/)
 python3 - "$manifest" "$dest" <<'EOF'

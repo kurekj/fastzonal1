@@ -63,5 +63,5 @@ tests.
 ## Style
 
 C++17, 4-space indentation, `snake_case` in C and C++, `PascalCase` in C#, Google-style comments
-that explain why rather than what. No mention of AI tools anywhere in the repository and no em
-dashes in code, comments or documentation. Commit messages are `type: summary` lines.
+that explain why rather than what. No em dashes in code, comments or documentation. Commit
+messages are `type: summary` lines.
