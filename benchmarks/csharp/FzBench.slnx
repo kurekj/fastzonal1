@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="FzBench.Tests/FzBench.Tests.csproj" />
+  <Project Path="FzBench/FzBench.csproj" />
+</Solution>

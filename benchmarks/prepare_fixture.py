@@ -90,7 +90,8 @@ def update_fixture_json(out: Path, fixture_id: str, raster_name: str | None, zon
         doc["rasters"].append(raster_name)
     if zones_name and zones_name not in doc["zones"]:
         doc["zones"].append(zones_name)
-    path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(doc, indent=2) + "\n")
 
 
 def main(argv=None):

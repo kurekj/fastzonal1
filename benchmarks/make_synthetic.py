@@ -86,7 +86,8 @@ def main(argv=None):
     inside = (cy[:, None] >= y0) & (cy[:, None] < y1) & (cx[None, :] >= x0) & (cx[None, :] < x1)
     vals = raster[inside]
     vals = vals[vals != NODATA].astype(np.float64)
-    (out / "check_mean_zone0.txt").write_text(f"{vals.mean():.17g}\n" if vals.size else "0\n")
+    with open(out / "check_mean_zone0.txt", "w", newline="\n") as f:
+        f.write(f"{vals.mean():.17g}\n" if vals.size else "0\n")
     return 0
 
 

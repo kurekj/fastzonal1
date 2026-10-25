@@ -18,6 +18,12 @@ DTYPES = {"f32": np.dtype("<f4"), "f64": np.dtype("<f8"), "i32": np.dtype("<i4")
 _NUMPY_TO_CODE = {np.dtype("float32"): "f32", np.dtype("float64"): "f64", np.dtype("int32"): "i32"}
 
 
+def _write_text(path, text: str) -> None:
+    """Writes with LF line endings on every platform so file hashes are portable."""
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+
+
 def _sidecar(json_path: Path, suffix: str) -> Path:
     """`raster_dem.json` -> `raster_dem<suffix>` (suffix starts with a dot)."""
     return json_path.with_suffix(suffix)
@@ -43,7 +49,7 @@ def write_raster(json_path, array, transform, nodata, meta=None):
     }
     header.update(meta or {})
     array.astype(DTYPES[code], copy=False).tofile(_sidecar(json_path, ".bin"))
-    json_path.write_text(json.dumps(header, indent=2) + "\n", encoding="utf-8")
+    _write_text(json_path, json.dumps(header, indent=2) + "\n")
 
 
 def read_raster(json_path):
@@ -106,7 +112,7 @@ def write_zones(json_path, polygons: Sequence, zone_ids: Sequence[int], meta=Non
         np.asarray(list(source_ids), dtype="<i8").tofile(f"{base}.ids.i64")
     header = {"n_zones": int(len(zone_ids)), "n_rings": int(len(ring_zone)), "n_points": int(n_points)}
     header.update(meta or {})
-    json_path.write_text(json.dumps(header, indent=2) + "\n", encoding="utf-8")
+    _write_text(json_path, json.dumps(header, indent=2) + "\n")
 
 
 def read_zones(json_path):
@@ -143,4 +149,4 @@ def read_centroids(dir_path, zones_name, raster_name) -> np.ndarray:
 
 def write_fixture_json(dir_path, fixture_id, rasters, zones, area_km2=None, notes=""):
     doc = {"id": fixture_id, "rasters": list(rasters), "zones": list(zones), "area_km2": area_km2, "notes": notes}
-    (Path(dir_path) / "fixture.json").write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+    _write_text(Path(dir_path) / "fixture.json", json.dumps(doc, indent=2) + "\n")
