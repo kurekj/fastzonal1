@@ -14,6 +14,7 @@ add_executable(fz_tests
     test_options.cpp
     test_rasterize.cpp
     test_zonal.cpp
+    test_parallel.cpp
 )
 target_link_libraries(fz_tests PRIVATE fastzonal Catch2::Catch2WithMain)
 target_compile_features(fz_tests PRIVATE cxx_std_17)

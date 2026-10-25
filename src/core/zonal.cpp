@@ -1,6 +1,8 @@
 #include "zonal.hpp"
+#include "validate.hpp"
 
 #include <limits>
+#include <new>
 
 namespace fz {
 
@@ -15,8 +17,14 @@ int validate_mask(const int32_t* mask, size_t n, int32_t n_zones) {
 int validate_zonal_args(const void* raster, const int32_t* mask, fz_shape s, int32_t n_zones, const void* out,
                         const fz_options* opt) {
     if (raster == nullptr || mask == nullptr || out == nullptr) return FZ_ERR_ARG;
-    if (s.width <= 0 || s.height <= 0 || n_zones <= 0) return FZ_ERR_ARG;
-    if (opt != nullptr && opt->backend == FZ_BACKEND_CUDA) return FZ_ERR_BACKEND;
+    int rc = validate_shape(s);
+    if (rc != FZ_OK) return rc;
+    if (n_zones <= 0) return FZ_ERR_ARG;
+    if (opt != nullptr) {
+        rc = validate_options(opt);
+        if (rc != FZ_OK) return rc;
+        if (opt->backend == FZ_BACKEND_CUDA) return FZ_ERR_BACKEND;
+    }
     return FZ_OK;
 }
 
@@ -102,10 +110,16 @@ int majority_impl(const T* raster, const int32_t* mask, fz_shape s, int32_t n_zo
     const size_t n = static_cast<size_t>(s.width) * static_cast<size_t>(s.height);
     rc = validate_mask(mask, n, n_zones);
     if (rc != FZ_OK) return rc;
-    ZoneCounts counts(static_cast<size_t>(n_zones));
-    majority_band(raster, mask, s, 0, s.height, nodata, counts);
-    majority_finalize(raster, s, nodata, counts, n_zones, centroid_row, centroid_col, value_out, has_value_out);
-    return FZ_OK;
+    try {
+        ZoneCounts counts(static_cast<size_t>(n_zones));
+        majority_band(raster, mask, s, 0, s.height, nodata, counts);
+        majority_finalize(raster, s, nodata, counts, n_zones, centroid_row, centroid_col, value_out, has_value_out);
+        return FZ_OK;
+    } catch (const std::bad_alloc&) {
+        return FZ_ERR_NOMEM;
+    } catch (...) {
+        return FZ_ERR_INTERNAL;
+    }
 }
 
 template <class T>

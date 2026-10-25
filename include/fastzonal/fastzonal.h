@@ -1,6 +1,18 @@
 /* fastzonal: zonal statistics and terrain indices over polygon units.
+ *
  * C ABI. Every function returns an fz error code (FZ_OK on success) unless documented otherwise.
- */
+ *
+ * Contract common to all functions:
+ * - Arguments are validated before any output is written: a null pointer where one is required, a non-positive
+ *   dimension, a shape whose pixel count does not fit the address space, an unknown option value, a mask value
+ *   outside [-1, n_zones) or a non-finite coordinate returns FZ_ERR_ARG and leaves every output untouched.
+ * - A backend that is not compiled in (or FZ_BACKEND_CUDA in this version) returns FZ_ERR_BACKEND.
+ * - Memory exhaustion returns FZ_ERR_NOMEM; any other internal failure FZ_ERR_INTERNAL. After these two the
+ *   contents of the output buffers are unspecified.
+ * - The library never reads outside the arrays it is given, but it cannot know their sizes: the caller
+ *   guarantees that every raster and mask holds width * height elements, every per-zone array n_zones
+ *   elements, and every ring offset addresses points inside xy.
+ * - A NULL fz_options pointer means the defaults of fz_options_default. */
 #ifndef FASTZONAL_H
 #define FASTZONAL_H
 
@@ -81,7 +93,9 @@ FZ_API void fz_options_default(fz_options* opt);
 FZ_API const char* fz_error_string(int code);
 /* sum / count, or 0.0 when count is 0. */
 FZ_API double fz_stats_mean(const fz_stats* s);
-/* Population standard deviation from sum and sumsq, or 0.0 when count < 2. */
+/* Population standard deviation from sum and sumsq, or 0.0 when count < 2. Computed from the raw moments, so
+ * values with a large common offset relative to their spread lose precision (use the mean for parity work). A
+ * non-finite variance yields 0.0. */
 FZ_API double fz_stats_std(const fz_stats* s);
 
 /* ---- rasterisation ------------------------------------------------------------------- */
@@ -94,9 +108,14 @@ FZ_API double fz_stats_std(const fz_stats* s);
  * ring_is_hole: 1 when ring i is a hole of the nearest preceding exterior ring, else 0.
  * ring_zone:    zone index (0 .. n_zones - 1) of the polygon the ring belongs to; a hole carries the zone of its
  *               exterior ring.
- * mask_out:     s.height * s.width int32 values, row-major, fully written: the zone of the polygon covering the
- *               pixel, or -1 when no polygon covers it. Polygons are processed in ring order and later polygons
- *               overwrite earlier ones.
+ * mask_out:     s.height * s.width int32 values, row-major, fully written on success: the zone of the polygon
+ *               covering the pixel, or -1 when no polygon covers it. Polygons are processed in ring order and
+ *               later polygons overwrite earlier ones. n_rings == 0 writes -1 everywhere.
+ * Rejected with FZ_ERR_ARG: a hole before any exterior ring, a hole whose zone differs from its exterior ring, a
+ *               negative zone, non-finite coordinates in any ring (holes included, in both modes), ring offsets
+ *               that are not non-decreasing, a non-finite or non-positive pixel size. Rings with fewer than
+ *               three points cover nothing. Coordinates beyond about 1e12 pixels from the origin are clamped
+ *               and therefore cover nothing.
  *
  * FZ_RASTER_CENTER: a pixel belongs to a polygon when its centre is inside by the even-odd rule, holes honoured.
  * FZ_RASTER_COMPAT: the SpongeGIS reference rule: exterior rings only, centre test on rows, and on each row every

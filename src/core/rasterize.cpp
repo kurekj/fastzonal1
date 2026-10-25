@@ -1,23 +1,33 @@
 #include "rasterize.hpp"
+#include "validate.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <new>
 
 namespace fz {
 namespace {
 
-// Truncating world-to-pixel conversion of the reference implementation ((int) cast in C#), kept
-// in double so that far-away coordinates cannot overflow before clamping.
-int64_t trunc_to_int(double v) {
-    constexpr double kLimit = 1e15;
-    if (!(v > -kLimit)) return static_cast<int64_t>(-kLimit);
-    if (!(v < kLimit)) return static_cast<int64_t>(kLimit);
-    return static_cast<int64_t>(v);  // truncation toward zero
+// Largest magnitude that is converted to an integer; anything beyond is clamped first. Rasters
+// are at most INT32_MAX pixels wide, so a clamp of 2^40 keeps every later comparison exact.
+constexpr double kClamp = 1099511627776.0;  // 2^40
+
+double clamp_for_int(double v) {
+    if (!(v > -kClamp)) return -kClamp;  // also catches NaN
+    if (!(v < kClamp)) return kClamp;
+    return v;
 }
 
+// Truncating world-to-pixel conversion of the reference implementation ((int) cast in C#).
+int64_t trunc_to_int(double v) { return static_cast<int64_t>(clamp_for_int(v)); }
+
+int64_t ceil_to_int(double v) { return static_cast<int64_t>(std::ceil(clamp_for_int(v))); }
+int64_t floor_to_int(double v) { return static_cast<int64_t>(std::floor(clamp_for_int(v))); }
+
 // Collects the x coordinates where the ring's edges cross the horizontal line y = wy, using the
-// half-open rule of the reference ((y1 <= wy && y2 > wy) || (y2 <= wy && y1 > wy)).
+// half-open rule of the reference ((y1 <= wy && y2 > wy) || (y2 <= wy && y1 > wy)). A crossing
+// whose interpolation overflows to a non-finite value is dropped.
 void collect_crossings(const double* xy, const Ring& ring, double wy, std::vector<double>& out) {
     const int64_t n = ring.end - ring.begin;
     if (n < 3) return;
@@ -26,7 +36,8 @@ void collect_crossings(const double* xy, const Ring& ring, double wy, std::vecto
         const double x1 = xy[2 * (ring.begin + i)], y1 = xy[2 * (ring.begin + i) + 1];
         const double x2 = xy[2 * (ring.begin + j)], y2 = xy[2 * (ring.begin + j) + 1];
         if ((y1 <= wy && y2 > wy) || (y2 <= wy && y1 > wy)) {
-            out.push_back(x1 + (wy - y1) / (y2 - y1) * (x2 - x1));
+            const double x = x1 + (wy - y1) / (y2 - y1) * (x2 - x1);
+            if (std::isfinite(x)) out.push_back(x);
         }
     }
 }
@@ -46,10 +57,8 @@ void fill_center(const PolygonSet& set, const Polygon& p, const fz_transform& t,
             // columns whose centre x satisfies xa <= x < xb
             const double a = (crossings[k] - t.origin_x) / t.pixel_w - 0.5;
             const double b = (crossings[k + 1] - t.origin_x) / t.pixel_w - 0.5;
-            int64_t c0 = static_cast<int64_t>(std::ceil(std::max(a, -1.0)));
-            int64_t c1 = static_cast<int64_t>(std::ceil(std::min(b, static_cast<double>(s.width) + 1.0))) - 1;
-            c0 = std::max<int64_t>(c0, 0);
-            c1 = std::min<int64_t>(c1, s.width - 1);
+            const int64_t c0 = std::max<int64_t>(ceil_to_int(a), 0);
+            const int64_t c1 = std::min<int64_t>(ceil_to_int(b) - 1, s.width - 1);
             for (int64_t col = c0; col <= c1; ++col) row_ptr[col] = p.zone;
         }
     }
@@ -86,13 +95,26 @@ int build_polygon_set(const double* xy, const int64_t* ring_start, const uint8_t
     if (n_rings == 0) return FZ_OK;
     if (xy == nullptr || ring_start == nullptr || ring_is_hole == nullptr || ring_zone == nullptr) return FZ_ERR_ARG;
     if (ring_start[0] < 0) return FZ_ERR_ARG;
+    // Offsets are doubled to index xy; keep that arithmetic in range.
+    constexpr int64_t kMaxOffset = std::numeric_limits<int64_t>::max() / 4;
 
     for (int64_t i = 0; i < n_rings; ++i) {
-        if (ring_start[i + 1] < ring_start[i]) return FZ_ERR_ARG;
+        if (ring_start[i + 1] < ring_start[i] || ring_start[i + 1] > kMaxOffset) return FZ_ERR_ARG;
         const Ring ring{ring_start[i], ring_start[i + 1]};
+        double min_x = std::numeric_limits<double>::infinity(), min_y = min_x;
+        double max_x = -min_x, max_y = -min_x;
+        for (int64_t k = ring.begin; k < ring.end; ++k) {
+            const double x = xy[2 * k], y = xy[2 * k + 1];
+            if (!std::isfinite(x) || !std::isfinite(y)) return FZ_ERR_ARG;
+            min_x = std::min(min_x, x);
+            max_x = std::max(max_x, x);
+            min_y = std::min(min_y, y);
+            max_y = std::max(max_y, y);
+        }
         if (ring_is_hole[i]) {
-            if (out.polygons.empty()) return FZ_ERR_ARG;  // a hole needs an exterior ring before it
-            if (mode == FZ_RASTER_COMPAT) continue;        // the reference ignores holes
+            if (out.polygons.empty()) return FZ_ERR_ARG;          // a hole needs an exterior ring before it
+            if (ring_zone[i] != out.polygons.back().zone) return FZ_ERR_ARG;
+            if (mode == FZ_RASTER_COMPAT) continue;                // the reference ignores holes
             out.polygons.back().rings.push_back(ring);
             continue;
         }
@@ -100,18 +122,12 @@ int build_polygon_set(const double* xy, const int64_t* ring_start, const uint8_t
         Polygon p;
         p.zone = ring_zone[i];
         p.rings.push_back(ring);
-        p.min_x = p.min_y = std::numeric_limits<double>::infinity();
-        p.max_x = p.max_y = -std::numeric_limits<double>::infinity();
-        for (int64_t k = ring.begin; k < ring.end; ++k) {
-            const double x = xy[2 * k], y = xy[2 * k + 1];
-            if (!std::isfinite(x) || !std::isfinite(y)) return FZ_ERR_ARG;
-            p.min_x = std::min(p.min_x, x);
-            p.max_x = std::max(p.max_x, x);
-            p.min_y = std::min(p.min_y, y);
-            p.max_y = std::max(p.max_y, y);
-        }
+        p.min_x = min_x;
+        p.min_y = min_y;
+        p.max_x = max_x;
+        p.max_y = max_y;
         if (ring.end - ring.begin < 3) {
-            p.row_begin = p.row_end = 0;  // degenerate ring: touches nothing
+            p.row_begin = p.row_end = 0;  // fewer than three points: touches nothing
         } else if (mode == FZ_RASTER_COMPAT) {
             const int64_t r0 = std::max<int64_t>(0, trunc_to_int((t.origin_y - p.max_y) / t.pixel_h));
             const int64_t r1 = std::min<int64_t>(s.height - 1, trunc_to_int((t.origin_y - p.min_y) / t.pixel_h));
@@ -121,9 +137,8 @@ int build_polygon_set(const double* xy, const int64_t* ring_start, const uint8_t
             // rows whose centre y lies in [min_y, max_y]
             const double a = (t.origin_y - p.max_y) / t.pixel_h - 0.5;
             const double b = (t.origin_y - p.min_y) / t.pixel_h - 0.5;
-            const int64_t r0 = std::max<int64_t>(0, static_cast<int64_t>(std::ceil(std::max(a, -1.0))));
-            const int64_t r1 = std::min<int64_t>(s.height - 1,
-                static_cast<int64_t>(std::floor(std::min(b, static_cast<double>(s.height) + 1.0))));
+            const int64_t r0 = std::max<int64_t>(0, ceil_to_int(a));
+            const int64_t r1 = std::min<int64_t>(s.height - 1, floor_to_int(b));
             p.row_begin = static_cast<int32_t>(std::min<int64_t>(r0, s.height));
             p.row_end = static_cast<int32_t>(std::max<int64_t>(r1 + 1, p.row_begin));
         }
@@ -155,18 +170,27 @@ int fz_rasterize(const double* xy, const int64_t* ring_start, const uint8_t* rin
     fz_options defaults;
     fz_options_default(&defaults);
     if (opt == nullptr) opt = &defaults;
+    int rc = fz::validate_options(opt);
+    if (rc != FZ_OK) return rc;
     if (n_rings < 0 || mask_out == nullptr) return FZ_ERR_ARG;
-    if (s.width <= 0 || s.height <= 0) return FZ_ERR_ARG;
-    if (!(t.pixel_w > 0.0) || !(t.pixel_h > 0.0) || !std::isfinite(t.origin_x) || !std::isfinite(t.origin_y))
+    rc = fz::validate_shape(s);
+    if (rc != FZ_OK) return rc;
+    if (!std::isfinite(t.pixel_w) || !std::isfinite(t.pixel_h) || !(t.pixel_w > 0.0) || !(t.pixel_h > 0.0) ||
+        !std::isfinite(t.origin_x) || !std::isfinite(t.origin_y))
         return FZ_ERR_ARG;
-    if (opt->raster_mode != FZ_RASTER_CENTER && opt->raster_mode != FZ_RASTER_COMPAT) return FZ_ERR_ARG;
     if (opt->backend == FZ_BACKEND_CUDA) return FZ_ERR_BACKEND;
 
-    fz::PolygonSet set;
-    const int rc = fz::build_polygon_set(xy, ring_start, ring_is_hole, ring_zone, n_rings, t, s, opt->raster_mode, set);
-    if (rc != FZ_OK) return rc;
-    fz::rasterize_band(set, t, s, 0, s.height, opt->raster_mode, mask_out);
-    return FZ_OK;
+    try {
+        fz::PolygonSet set;
+        rc = fz::build_polygon_set(xy, ring_start, ring_is_hole, ring_zone, n_rings, t, s, opt->raster_mode, set);
+        if (rc != FZ_OK) return rc;
+        fz::rasterize_band(set, t, s, 0, s.height, opt->raster_mode, mask_out);
+        return FZ_OK;
+    } catch (const std::bad_alloc&) {
+        return FZ_ERR_NOMEM;
+    } catch (...) {
+        return FZ_ERR_INTERNAL;
+    }
 }
 
 }  // extern "C"
