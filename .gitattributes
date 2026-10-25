@@ -1,0 +1,11 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.bin binary
+*.f32 binary
+*.f64 binary
+*.i32 binary
+*.i64 binary
+*.u8 binary
+*.png binary
