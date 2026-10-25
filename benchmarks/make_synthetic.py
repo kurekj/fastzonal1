@@ -61,7 +61,7 @@ def main(argv=None):
     ap.add_argument("--id", default=None, help="fixture id (default: output directory name)")
     args = ap.parse_args(argv)
 
-    rng = np.random.default_rng(args.seed)
+    rng = np.random.Generator(np.random.PCG64(args.seed))  # fixed generator, fixed stream
     raster = smooth_noise(rng, args.height, args.width).astype(np.float32)
     raster[rng.random(raster.shape) < 0.05] = NODATA
     transform = (0.0, float(args.height), 1.0, 1.0)  # unit pixels, origin top-left
@@ -72,7 +72,7 @@ def main(argv=None):
     io.write_raster(out / "raster_synth.json", raster, transform, NODATA,
                     {"crs": "none", "source": "make_synthetic.py", "licence": "MIT", "seed": args.seed})
     io.write_zones(out / "zones_rect.json", polys, list(range(len(polys))),
-                   {"crs": "none", "source": "make_synthetic.py", "seed": args.seed})
+                   {"crs": "none", "source": "make_synthetic.py", "licence": "MIT", "seed": args.seed})
     io.write_centroids(out, "rect", "synth", io.centroid_cells(polys, transform))
     io.write_fixture_json(out, args.id or out.name, ["synth"], ["rect"], None,
                           f"synthetic {args.width}x{args.height}, {args.zones} rectangles, seed {args.seed}")

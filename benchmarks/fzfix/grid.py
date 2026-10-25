@@ -30,15 +30,24 @@ def square_grid(boundary, size: float, min_area_share: float = 0.01):
     y1 = y_top - rr.ravel() * size
     cells = shapely.box(x0, y1 - size, x0 + size, y1)
     clipped = shapely.intersection(cells, boundary)
-    area = shapely.area(clipped)
-    keep = area >= min_area_share * size * size
-    keep &= ~shapely.is_empty(clipped)
-    kept = clipped[keep]
-    # intersections of a box with a polygon may yield collections with line or point parts
-    out = []
-    for g in kept:
-        if g.geom_type == "GeometryCollection":
-            polys = [p for p in g.geoms if p.geom_type in ("Polygon", "MultiPolygon")]
-            g = shapely.union_all(polys) if polys else shapely.Polygon()
-        out.append(g)
+    # intersections of a box with a polygon may yield collections with line or point parts;
+    # keep the polygonal part only, and only cells with a positive polygonal area
+    polygonal = [_polygonal(g) for g in clipped]
+    area = np.array([g.area for g in polygonal])
+    threshold = max(min_area_share * size * size, 0.0)
+    out = [g for g, a in zip(polygonal, area) if a > 0 and a >= threshold]
     return out, list(range(len(out)))
+
+
+def _polygonal(geom):
+    """The polygonal part of any geometry (empty Polygon when there is none)."""
+    if geom is None or geom.is_empty:
+        return shapely.Polygon()
+    gt = geom.geom_type
+    if gt in ("Polygon", "MultiPolygon"):
+        return geom
+    if gt == "GeometryCollection":
+        parts = [_polygonal(p) for p in geom.geoms]
+        parts = [p for p in parts if not p.is_empty]
+        return shapely.union_all(parts) if parts else shapely.Polygon()
+    return shapely.Polygon()

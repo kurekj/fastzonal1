@@ -4,5 +4,6 @@
   "n_points": 200,
   "crs": "none",
   "source": "make_synthetic.py",
+  "licence": "MIT",
   "seed": 7
 }

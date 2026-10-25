@@ -34,7 +34,8 @@ public static class Program
             "  FzBench expected <fixtureDir> <outDir>\n" +
             "      writes <outDir>/<fixture>/<op>_<zones>_<raster>.csv for every zone set and raster\n" +
             "  FzBench bench <fixtureDir> <rung> <op> <zones> <raster> [--den <raster>] [--threads T] [--reps R] [--out results.csv]\n" +
-            "      rungs: csharp-baseline; ops: rasterize, mean, majority, ratio");
+            "      rungs: csharp-baseline; ops: rasterize, mean, majority, ratio\n" +
+            "      one untimed warm-up precedes the R measured repetitions; the CSV records the threads the rung used");
         return 1;
     }
 
@@ -70,7 +71,8 @@ public static class Program
             var num = names[0];
             var den = names.Count > 1 ? names[1] : names[0];
             var m = rung.Rasterize(f, zname, num);
-            WriteCsv(Path.Combine(outDir, $"ratio_{zname}_{num}_{den}.csv"), rung.Ratio(f, zname, num, den, m));
+            var denOnGrid = Fixture.PrepareDenominator(f.Rasters[num], f.Rasters[den]);
+            WriteCsv(Path.Combine(outDir, $"ratio_{zname}_{num}_{den}.csv"), rung.Ratio(f, zname, num, denOnGrid, m));
             Console.WriteLine($"{f.Id}: {zname}: ratio {num}/{den}");
         }
         return 0;
@@ -109,8 +111,10 @@ public static class Program
         var f = Fixture.Load(fixtureDir);
         var rung = MakeRung(rungName, threads);
         var mask = op == "rasterize" ? null : rung.Rasterize(f, zones, raster);
+        var denOnGrid = op == "ratio" ? Fixture.PrepareDenominator(f.Rasters[raster], f.Rasters[den]) : null;
         var lines = new StringBuilder();
-        for (int rep = 0; rep < reps; rep++)
+        // one untimed warm-up repetition (JIT, page faults), then the measured repetitions
+        for (int rep = -1; rep < reps; rep++)
         {
             double checksum;
             var sw = Stopwatch.StartNew();
@@ -139,7 +143,7 @@ public static class Program
                 }
                 case "ratio":
                 {
-                    var v = rung.Ratio(f, zones, raster, den, mask!);
+                    var v = rung.Ratio(f, zones, raster, denOnGrid!, mask!);
                     sw.Stop();
                     checksum = v.Sum();
                     break;
@@ -147,13 +151,15 @@ public static class Program
                 default:
                     throw new ArgumentException($"unknown op {op}");
             }
+            if (rep < 0) continue;  // warm-up
             var zcount = f.Zones[zones].ZoneCount;
             var r = f.Rasters[raster];
-            lines.Append(string.Join(",", f.Id, op, rung.Name, threads.ToString(Inv), rep.ToString(Inv),
+            lines.Append(string.Join(",", f.Id, op, rung.Name, rung.EffectiveThreads.ToString(Inv), rep.ToString(Inv),
                 sw.Elapsed.TotalSeconds.ToString("G17", Inv), checksum.ToString("G17", Inv),
-                zones, raster, zcount.ToString(Inv), ((long)r.Width * r.Height).ToString(Inv))).Append('\n');
+                zones, raster, op == "ratio" ? den : "", zcount.ToString(Inv),
+                ((long)r.Width * r.Height).ToString(Inv))).Append('\n');
         }
-        var header = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,n_zones,n_cells\n";
+        var header = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells\n";
         if (!File.Exists(outPath)) File.WriteAllText(outPath, header, new UTF8Encoding(false));
         File.AppendAllText(outPath, lines.ToString(), new UTF8Encoding(false));
         Console.Write(lines.ToString());

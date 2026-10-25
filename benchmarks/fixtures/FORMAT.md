@@ -37,5 +37,13 @@ Centroid cells use the truncating rule of the reference application:
 `row = trunc((origin_y - cy) / pixel_h)`, `col = trunc((cx - origin_x) / pixel_w)`, where
 `(cx, cy)` is the shapely centroid. Cells may lie outside the raster; the library checks the range.
 
+Conventions the harnesses rely on:
+
+- `-9999` is reserved: every harness remaps the header's `nodata` to `-9999` when loading (the
+  reference application tests for `-9999` and NaN), so a valid data value of `-9999` is not
+  representable. NaN cells are always excluded; a NaN `nodata` is written as `null`.
+- `i32` rasters hold class codes; their values must be below 2^24 so that the float32 copies used
+  by the C# harness are exact.
+
 `prepare_fixture.py` creates these files from a GeoTIFF and any GDAL-readable polygon layer and
 refuses inputs whose CRS differ. `make_synthetic.py` creates a download-free fixture.

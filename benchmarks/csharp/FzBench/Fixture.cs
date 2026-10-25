@@ -64,20 +64,45 @@ public sealed class Fixture
         double? nodata = meta.GetProperty("nodata").ValueKind == JsonValueKind.Null
             ? null : meta.GetProperty("nodata").GetDouble();
         var dtype = meta.GetProperty("dtype").GetString()!;
+        if (!BitConverter.IsLittleEndian)
+            throw new PlatformNotSupportedException("fixture binaries are little-endian; this host is not");
         var bytes = File.ReadAllBytes(Path.Combine(dir, $"raster_{name}.bin"));
         long n = (long)width * height;
+        int size = dtype switch { "f32" => 4, "f64" => 8, "i32" => 4,
+            _ => throw new InvalidDataException($"unsupported dtype {dtype}") };
+        if (bytes.LongLength != n * size)
+            throw new InvalidDataException($"raster_{name}.bin has {bytes.LongLength} bytes, expected {n * size}");
         var pixels = new double[height, width];
         var flat = new float[n];
+        // NoData is compared in the storage type, so a float32 sentinel matches float32 samples exactly.
+        float nodata32 = nodata.HasValue ? (float)nodata.Value : 0f;
+        int nodataI32 = nodata.HasValue ? (int)nodata.Value : 0;
         for (long i = 0; i < n; i++)
         {
-            double v = dtype switch
+            double v;
+            switch (dtype)
             {
-                "f32" => BitConverter.ToSingle(bytes, (int)(i * 4)),
-                "f64" => BitConverter.ToDouble(bytes, (int)(i * 8)),
-                "i32" => BitConverter.ToInt32(bytes, (int)(i * 4)),
-                _ => throw new InvalidDataException($"unsupported dtype {dtype}")
-            };
-            if (nodata.HasValue && v == nodata.Value) v = -9999.0;
+                case "f32":
+                {
+                    float s = BitConverter.ToSingle(bytes, (int)(i * 4));
+                    v = (nodata.HasValue && s == nodata32) ? -9999.0 : s;
+                    break;
+                }
+                case "f64":
+                {
+                    double s = BitConverter.ToDouble(bytes, (int)(i * 8));
+                    v = (nodata.HasValue && s == nodata.Value) ? -9999.0 : s;
+                    break;
+                }
+                default:
+                {
+                    int s = BitConverter.ToInt32(bytes, (int)(i * 4));
+                    if (s >= (1 << 24) || s <= -(1 << 24))
+                        throw new InvalidDataException($"raster_{name}.bin: integer {s} is not exact in float32");
+                    v = (nodata.HasValue && s == nodataI32) ? -9999.0 : s;
+                    break;
+                }
+            }
             pixels[i / width, i % width] = v;
             flat[i] = (float)v;
         }
@@ -124,12 +149,16 @@ public sealed class Fixture
         }
         _ = current;
 
+        if (ringZone.Length != ringIsHole.Length || ringStart.Length != ringZone.Length + 1)
+            throw new InvalidDataException($"zones_{name}: ring arrays disagree");
         var centroids = new Dictionary<string, (int[] Rows, int[] Cols)>();
         foreach (var rn in rasterNames)
         {
             var path = $"{b}.centroid_rc_{rn}.i32";
             if (!File.Exists(path)) continue;
             var rc = ReadInts(path);
+            if (rc.Length != 2 * zoneCount)
+                throw new InvalidDataException($"zones_{name}: centroid file for {rn} has {rc.Length / 2} entries, expected {zoneCount}");
             var rows = new int[zoneCount];
             var cols = new int[zoneCount];
             for (int z = 0; z < zoneCount; z++) { rows[z] = rc[2 * z]; cols[z] = rc[2 * z + 1]; }
@@ -144,6 +173,8 @@ public sealed class Fixture
 
     private static LinearRing ReadRing(double[] xy, long begin, long end, GeometryFactory factory)
     {
+        if (begin < 0 || end < begin || end * 2 > xy.LongLength)
+            throw new InvalidDataException("ring offsets point outside the coordinate array");
         int n = (int)(end - begin);
         var coords = new Coordinate[n + 1];
         for (int k = 0; k < n; k++) coords[k] = new Coordinate(xy[2 * (begin + k)], xy[2 * (begin + k) + 1]);
@@ -151,9 +182,17 @@ public sealed class Fixture
         return factory.CreateLinearRing(coords);
     }
 
-    private static double[] ReadDoubles(string path)
+    private static byte[] ReadExact(string path, int elementSize)
     {
         var bytes = File.ReadAllBytes(path);
+        if (bytes.Length % elementSize != 0)
+            throw new InvalidDataException($"{Path.GetFileName(path)}: {bytes.Length} bytes is not a multiple of {elementSize}");
+        return bytes;
+    }
+
+    private static double[] ReadDoubles(string path)
+    {
+        var bytes = ReadExact(path, 8);
         var out_ = new double[bytes.Length / 8];
         Buffer.BlockCopy(bytes, 0, out_, 0, out_.Length * 8);
         return out_;
@@ -161,7 +200,7 @@ public sealed class Fixture
 
     private static long[] ReadLongs(string path)
     {
-        var bytes = File.ReadAllBytes(path);
+        var bytes = ReadExact(path, 8);
         var out_ = new long[bytes.Length / 8];
         Buffer.BlockCopy(bytes, 0, out_, 0, out_.Length * 8);
         return out_;
@@ -169,15 +208,34 @@ public sealed class Fixture
 
     private static int[] ReadInts(string path)
     {
-        var bytes = File.ReadAllBytes(path);
+        var bytes = ReadExact(path, 4);
         var out_ = new int[bytes.Length / 4];
         Buffer.BlockCopy(bytes, 0, out_, 0, out_.Length * 4);
         return out_;
     }
 
+    /// <summary>The denominator of the ratio workload on the numerator's grid: the same object when
+    /// the grids already match, otherwise a nearest-neighbour resampled copy. Called once by the
+    /// driver before any timing; every rung receives the same prepared raster.</summary>
+    public static RasterData PrepareDenominator(RasterData num, RasterData den)
+    {
+        if (ReferenceEquals(num, den) ||
+            (den.Width == num.Width && den.Height == num.Height && den.Transform == num.Transform))
+            return den;
+        var pixels = ResampleNearest(den, num);
+        var flat = new float[(long)num.Width * num.Height];
+        for (int r = 0; r < num.Height; r++)
+            for (int c = 0; c < num.Width; c++)
+                flat[(long)r * num.Width + c] = (float)pixels[r, c];
+        return new RasterData
+        {
+            Name = den.Name + "@" + num.Name, Width = num.Width, Height = num.Height, Transform = num.Transform,
+            NoData = -9999.0, DType = "f64", Pixels = pixels, Flat = flat
+        };
+    }
+
     /// <summary>Nearest-neighbour resampling of <paramref name="src"/> onto the grid of
-    /// <paramref name="target"/>; cells outside the source extent become -9999. Used to put the
-    /// denominator of the ratio workload on the numerator's grid, outside the timed region.</summary>
+    /// <paramref name="target"/>; cells outside the source extent become -9999.</summary>
     public static double[,] ResampleNearest(RasterData src, RasterData target)
     {
         var o = new double[target.Height, target.Width];

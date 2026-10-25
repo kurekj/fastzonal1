@@ -40,12 +40,18 @@ def write_raster(json_path, array, transform, nodata, meta=None):
     origin_x, origin_y, pixel_w, pixel_h = (float(v) for v in transform)
     if not (pixel_w > 0 and pixel_h > 0):
         raise ValueError("pixel sizes must be positive (north-up grid)")
+    if nodata is not None:
+        nodata = float(nodata)
+        if math.isnan(nodata):
+            nodata = None  # NaN cells are always excluded by the library; JSON has no NaN literal
+        elif math.isinf(nodata):
+            raise ValueError("nodata must be finite or NaN")
     header = {
         "dtype": code,
         "width": int(array.shape[1]),
         "height": int(array.shape[0]),
         "transform": [origin_x, origin_y, pixel_w, pixel_h],
-        "nodata": None if nodata is None else float(nodata),
+        "nodata": nodata,
     }
     header.update(meta or {})
     array.astype(DTYPES[code], copy=False).tofile(_sidecar(json_path, ".bin"))
@@ -126,6 +132,29 @@ def read_zones(json_path):
         "ring_is_hole": np.fromfile(f"{base}.ring_is_hole.u8", dtype="u1"),
         "ring_zone": np.fromfile(f"{base}.ring_zone.i32", dtype="<i4"),
     }
+
+
+def zones_to_polygons(zones: dict):
+    """Rebuilds shapely geometries (one per zone) from the flat ring arrays of read_zones."""
+    import shapely
+    from shapely.geometry import MultiPolygon, Polygon
+
+    xy = zones["xy"].reshape(-1, 2)
+    rs = zones["ring_start"]
+    per_zone: dict[int, list] = {}
+    current = None
+    for i, (hole, zone) in enumerate(zip(zones["ring_is_hole"], zones["ring_zone"])):
+        ring = xy[rs[i]:rs[i + 1]]
+        if not hole:
+            current = [ring, []]
+            per_zone.setdefault(int(zone), []).append(current)
+        else:
+            current[1].append(ring)
+    out = []
+    for z in range(int(zones["meta"]["n_zones"])):
+        parts = [Polygon(shell, holes) for shell, holes in per_zone.get(z, [])]
+        out.append(parts[0] if len(parts) == 1 else MultiPolygon(parts) if parts else Polygon())
+    return out
 
 
 def centroid_cells(polygons: Sequence, transform) -> np.ndarray:

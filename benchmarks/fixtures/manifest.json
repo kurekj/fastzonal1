@@ -114,40 +114,40 @@
           "sha256": "b93fc19a85dda1a8be2b86ef2b2ee30578928751a0cf614fd48505ec1d7dc23c"
         },
         "raster_clc100.json": {
-          "bytes": 350,
-          "sha256": "4ee182fdc4f6d366287896584fe46b050489bda085d28d7df2276b87bd6a6908"
+          "bytes": 466,
+          "sha256": "ae4504fbc81bd0e797723d41b9b01adca68b12e298393e958e9d7ee10dd75886"
         },
         "raster_dem120.bin": {
           "bytes": 564608,
           "sha256": "e9db8c485ec68f3abd034300a778567bfac1bbd291a45fdc753915d02c0d3348"
         },
         "raster_dem120.json": {
-          "bytes": 263,
-          "sha256": "e7c9e7a1d8e3fb31748e39fdeba540ebf3c3b6b46037be624a891bbe2751e59b"
+          "bytes": 288,
+          "sha256": "7f9c347f713fa66980a7a6e92bb5995fecc1866a8713bbcbc568257b17f87117"
         },
         "raster_dem30.bin": {
           "bytes": 9001648,
           "sha256": "6a0cffc7810ce6a82dd14dc753000b90733a136d435c0a727c01e29a2dc2dae5"
         },
         "raster_dem30.json": {
-          "bytes": 295,
-          "sha256": "276aed3fd570a78325a5f0febbe54f94b10e2bbe5563d1a4a24f719511840bd9"
+          "bytes": 369,
+          "sha256": "5a650a027e0823eb4c8a3022901f3985a99805989777f83607ad801617ce1962"
         },
         "raster_dem60.bin": {
           "bytes": 2252016,
           "sha256": "d12e9f33174b5bbd05e373a98eca26e92dd1fc71c8970088ee3befb06e44b672"
         },
         "raster_dem60.json": {
-          "bytes": 259,
-          "sha256": "ed5028689b33e26105de57ead8a3e93140173c6b50290042d9e2572b118c1bc5"
+          "bytes": 284,
+          "sha256": "11109b78abed43bedcae042d719e09f2ab7dfbf9f66e8c7885f083876cf367dd"
         },
         "raster_imp30.bin": {
           "bytes": 9001648,
           "sha256": "d3267ea0080723f0f98ce1bab6eabad843cea3d01f392f93ce3166ba355797ad"
         },
         "raster_imp30.json": {
-          "bytes": 349,
-          "sha256": "bb1e0d57bb683de9124cf5bf8d40d7716be67e7d53753c4e50efc652b0cea88f"
+          "bytes": 583,
+          "sha256": "a9463b1b3d1ac8e89954f395459c9521698c8b8f592358b5ba8209ca27b46915"
         },
         "zones_grid100.centroid_rc_clc100.i32": {
           "bytes": 800344,
@@ -174,8 +174,8 @@
           "sha256": "e7b90105a9a80bdc1cb5eb69b713ed1ff4bf2c984b3c0ee8ead6476b58ea529e"
         },
         "zones_grid100.json": {
-          "bytes": 256,
-          "sha256": "c45bc3af8ff1e02203bc9a5db99cf137ab6855ba37bae5cb4a0b6bedd3e94818"
+          "bytes": 330,
+          "sha256": "8ba8cbad25e656a32220ec3d458429fa9e618f7569a011fa2fa4be600bb72abd"
         },
         "zones_grid100.ring_is_hole.u8": {
           "bytes": 100048,
@@ -218,8 +218,8 @@
           "sha256": "9996acf154e2b932cb6f0a1bff58ebba376ede12cca95032c622b8a870155acb"
         },
         "zones_grid1000.json": {
-          "bytes": 251,
-          "sha256": "6f4b65f86940c07dede21fe9180fe1b4f063f393206c0af7a409fdc0d188b0b8"
+          "bytes": 325,
+          "sha256": "f22cdcabd8bbdbbc9adedb02142f60b6bb48e878e5ae226cd5c522fe9f915c89"
         },
         "zones_grid1000.ring_is_hole.u8": {
           "bytes": 1094,
@@ -262,8 +262,8 @@
           "sha256": "343c98ab041b9a559eb1acc139bccfe75e549d4cf03be4514a3afc7ef58b691d"
         },
         "zones_grid250.json": {
-          "bytes": 253,
-          "sha256": "8a15ffc78569c3991a790227680e1653179d7642cb1ca4bf06e0390ff8b00514"
+          "bytes": 327,
+          "sha256": "2caf470db27e6b1baf37e5071e948621038759bacd35050229db638cc31bcb97"
         },
         "zones_grid250.ring_is_hole.u8": {
           "bytes": 16294,
@@ -306,8 +306,8 @@
           "sha256": "16305c4b992a6cb35c503355345ed279410deb173506e4be03f766837b3a1794"
         },
         "zones_grid500.json": {
-          "bytes": 251,
-          "sha256": "953004bde189d6fe3b6e28ff5de74f8e929297aa6a8aca1ed7dea9e26b13cca0"
+          "bytes": 325,
+          "sha256": "0e68bd7f9deacb62dd4cb3de657c61a67d423578a4db953d583f7af750458a02"
         },
         "zones_grid500.ring_is_hole.u8": {
           "bytes": 4180,
@@ -328,27 +328,27 @@
       },
       "sources": {
         "dem30": [
-          "GEDTM30 global ensemble DTM, 30 m, OpenGeoHub (PostGIS table dem30)",
+          "GEDTM30 global ensemble digital terrain model, 30 m, OpenGeoHub 2024, https://github.com/openlandmap/GEDTM30 (PostGIS table dem30, EPSG:3035)",
           "CC BY 4.0"
         ],
         "dem60": [
-          "GEDTM30 generalised to 60 m (PostGIS table dem60)",
+          "GEDTM30 averaged to 60 m during the SpongeGIS import (PostGIS table dem60)",
           "CC BY 4.0"
         ],
         "dem120": [
-          "GEDTM30 generalised to 120 m (PostGIS table dem120)",
+          "GEDTM30 averaged to 120 m during the SpongeGIS import (PostGIS table dem120)",
           "CC BY 4.0"
         ],
         "clc100": [
-          "CORINE Land Cover 2018 class code (code_18) rasterised at 100 m from PostGIS table landuse_clc",
-          "Copernicus Land Monitoring Service, free with attribution"
+          "CORINE Land Cover 2018 (CLC2018 v2020_20u1, vector), class code CODE_18 rasterised at 100 m from PostGIS table landuse_clc; https://land.copernicus.eu/en/products/corine-land-cover/clc2018",
+          "Copernicus Land Monitoring Service: free, full and open access with attribution"
         ],
         "imp30": [
-          "Copernicus Imperviousness Density 2018 at 30 m (PostGIS table urban_imp30), 255 -> NoData",
-          "Copernicus Land Monitoring Service, free with attribution"
+          "Copernicus High Resolution Layer Imperviousness Density 2018 (10 m) resampled to 30 m during the SpongeGIS import (PostGIS table urban_imp30); 255 (unclassifiable) and the declared NoData -> -9999; https://land.copernicus.eu/en/products/high-resolution-layer-imperviousness/imperviousness-density-2018",
+          "Copernicus Land Monitoring Service: free, full and open access with attribution"
         ],
         "grid": [
-          "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline",
+          "square grid aligned to the cell size, clipped to a HydroBASINS v1c basin outline (https://www.hydrosheds.org/products/hydrobasins), reprojected to EPSG:3035",
           "CC BY 4.0"
         ]
       }
@@ -722,6 +722,327 @@
           "CC BY 4.0"
         ]
       }
+    }
+  },
+  "expected": {
+    "biebrza_upper": {
+      "files": {
+        "majority_grid1000_clc100.csv": {
+          "bytes": 8693,
+          "sha256": "9e12091ae80d2aa2d34351f42b2b2a3d34a4f1f9430e2bf7885fcfbced08e6b6"
+        },
+        "majority_grid1000_dem120.csv": {
+          "bytes": 24686,
+          "sha256": "2ebe15ff4e4627b60c547a90d194953de5b84fd77c8d277f38be3dee7bb9142c"
+        },
+        "majority_grid1000_dem30.csv": {
+          "bytes": 21657,
+          "sha256": "a4de9c5649b3580ce6e1c02bb43b1006b75266630701ec62c843009b98a53648"
+        },
+        "majority_grid1000_dem60.csv": {
+          "bytes": 24674,
+          "sha256": "120eea9e744f667c5d018fb10203dba401b46f05aece771edfb714af3bc36195"
+        },
+        "majority_grid1000_imp30.csv": {
+          "bytes": 6545,
+          "sha256": "bcc1cec95b1ce791f917d76fb56529ff5e940760da69d55e5f57f11d135f533b"
+        },
+        "majority_grid100_clc100.csv": {
+          "bytes": 986434,
+          "sha256": "957bb77ff87be3d266ddace70a4c14e4f136c799b561f94f9e72f73668837340"
+        },
+        "majority_grid100_dem120.csv": {
+          "bytes": 2447958,
+          "sha256": "fb50766a2408f07928eecf4be81c8ddf3bc86ecd73152fb7fe8d105a0390fa52"
+        },
+        "majority_grid100_dem30.csv": {
+          "bytes": 2182302,
+          "sha256": "5dc2ffa39f847553f77d98d1b18700678af746079f38b827b54c721f1da02b3a"
+        },
+        "majority_grid100_dem60.csv": {
+          "bytes": 2449080,
+          "sha256": "b4a11a3f1164242c9427dcf12d698b42a15585ebc88385d6f2b1bc263ebab1a0"
+        },
+        "majority_grid100_imp30.csv": {
+          "bytes": 789614,
+          "sha256": "ae184b385af69da9fd9ce45eca3fd8240dbad0ab237deef85d6d25869498c752"
+        },
+        "majority_grid250_clc100.csv": {
+          "bytes": 151311,
+          "sha256": "52c9bfd80bd3bc69832773fa5ba8bdffae5cc58c485d6e5d878302c094d98946"
+        },
+        "majority_grid250_dem120.csv": {
+          "bytes": 389494,
+          "sha256": "7175ae7395937e762544995a2cc9bbd9682d90b0847633c4e57cdca089f9e6f0"
+        },
+        "majority_grid250_dem30.csv": {
+          "bytes": 346038,
+          "sha256": "a31f6bc2e2c196d2a75effeab01a9cbe2c3b8d7e24d5dc866e930aac1b4eeb38"
+        },
+        "majority_grid250_dem60.csv": {
+          "bytes": 389701,
+          "sha256": "7c44de77c9ac8da16a6d52eb1b935b385b7877d64138cb566422c72b937ee974"
+        },
+        "majority_grid250_imp30.csv": {
+          "bytes": 119232,
+          "sha256": "7675e30e400534d9081cdf68617ee4571f52d37aeca105217fd18bbb61e42f01"
+        },
+        "majority_grid500_clc100.csv": {
+          "bytes": 36373,
+          "sha256": "6e94dccdf2f5ea3b437d893d54e3ae73f158dc810ff326dd76079567a2eee8da"
+        },
+        "majority_grid500_dem120.csv": {
+          "bytes": 97536,
+          "sha256": "5809566ea11305d8e0ad73a41f48915139a90d9c5754cf65d8707c053d5e8861"
+        },
+        "majority_grid500_dem30.csv": {
+          "bytes": 86611,
+          "sha256": "0fba46637dc788aad4b663bd875f0b71c1812d79609d7f80c0b63b78dfbe7687"
+        },
+        "majority_grid500_dem60.csv": {
+          "bytes": 97522,
+          "sha256": "bd7c429c2253bc66ada5892f00dc79116e32a73ef536351d25d8ea6750b14c59"
+        },
+        "majority_grid500_imp30.csv": {
+          "bytes": 28148,
+          "sha256": "a67a09895babf3adecca9d1547706c49988df11ad77b0459bbfde8f2454bd36f"
+        },
+        "mean_grid1000_clc100.csv": {
+          "bytes": 12748,
+          "sha256": "8396020ccde521c81928a3af22cb8963d97b9f7414ff526a8d4db4a0d7d87ef2"
+        },
+        "mean_grid1000_dem120.csv": {
+          "bytes": 24801,
+          "sha256": "dfcad5ec7da4c33414556ea559fa94aedc51005046c953dfff5a989fc34cb3db"
+        },
+        "mean_grid1000_dem30.csv": {
+          "bytes": 24809,
+          "sha256": "36d7a81b868964201028782562fba1b9debc0939b148d30eac869ca9358a7f11"
+        },
+        "mean_grid1000_dem60.csv": {
+          "bytes": 24796,
+          "sha256": "68e9806c86bd2d0aeaec01c7d3ebafcd88e5432ed7ca8121392b59e4e891647e"
+        },
+        "mean_grid1000_imp30.csv": {
+          "bytes": 16589,
+          "sha256": "2671e359756101915977dadc08654c02d0485b4bf4a88951317a2a8d8374b82f"
+        },
+        "mean_grid100_clc100.csv": {
+          "bytes": 986434,
+          "sha256": "957bb77ff87be3d266ddace70a4c14e4f136c799b561f94f9e72f73668837340"
+        },
+        "mean_grid100_dem120.csv": {
+          "bytes": 2447979,
+          "sha256": "2eebdb822cd8e649becb0d1c0b7975d5f40755448e422e0d4d37299ff3c6421a"
+        },
+        "mean_grid100_dem30.csv": {
+          "bytes": 2441658,
+          "sha256": "0dc20d86b7c3f3bf509b21268352da636740fe9d8203808e4e706126c758aa24"
+        },
+        "mean_grid100_dem60.csv": {
+          "bytes": 2460279,
+          "sha256": "f4ee10187df74a394bbcb48496f6daa886c2c60c9fe88d42fc3888906f4f6d2c"
+        },
+        "mean_grid100_imp30.csv": {
+          "bytes": 855581,
+          "sha256": "fbcaa99091831d8276f654918762e14af2ee55724cbf814c6ed243b8b41d9893"
+        },
+        "mean_grid250_clc100.csv": {
+          "bytes": 214736,
+          "sha256": "24000a4d34df6009b8e78a781cb59ae0221fa66bbb34bd5be0d50b58d4507fe5"
+        },
+        "mean_grid250_dem120.csv": {
+          "bytes": 391871,
+          "sha256": "f24f3fdade52301e71155110bf852c7e36b6ebce663995fcc027f234769a4f58"
+        },
+        "mean_grid250_dem30.csv": {
+          "bytes": 389752,
+          "sha256": "1dcbd3e512a2eac2cb08aa5596ed507d1be8d1d1aced822ebd4d553411fd2d5a"
+        },
+        "mean_grid250_dem60.csv": {
+          "bytes": 391787,
+          "sha256": "1d7e87ce8863a473798517f4bc10af9aac091d7e43c72ef353284cee925eb9ed"
+        },
+        "mean_grid250_imp30.csv": {
+          "bytes": 144656,
+          "sha256": "757cd7fd8117e46353ef8ee827a9e0ec4a27c1d1b829560c9cb3de50bab33dbf"
+        },
+        "mean_grid500_clc100.csv": {
+          "bytes": 45123,
+          "sha256": "f8eee4da15535c44fcf548464c3cfbef97ce17cc36689d77cd41ebe2e5b5254e"
+        },
+        "mean_grid500_dem120.csv": {
+          "bytes": 98021,
+          "sha256": "a993ae9126d657838610210e8f7bb275c31283f339e2ba3a68af9e1b3b438dce"
+        },
+        "mean_grid500_dem30.csv": {
+          "bytes": 97968,
+          "sha256": "500e4a6a1bd6183ee966d88ccf3bd72a53e73be6951086303fde58b051b5dbbd"
+        },
+        "mean_grid500_dem60.csv": {
+          "bytes": 98086,
+          "sha256": "9b74065788b1112850fcb3be4278697fdd600503df556cdcb2d4ec9849e0859f"
+        },
+        "mean_grid500_imp30.csv": {
+          "bytes": 47553,
+          "sha256": "13ed6cc46a3d294d0f5b047fdea236d7d77f540f9d5c9bcd3d6b1f1c20c21f0d"
+        },
+        "rasterize_grid1000_clc100.csv": {
+          "bytes": 8511,
+          "sha256": "36505b5c6e9d907f46942482bfb42e66d6936c74f5a979ff2867b2b9849f0f81"
+        },
+        "rasterize_grid1000_dem120.csv": {
+          "bytes": 7611,
+          "sha256": "daebbb6e109f2728c698e1e92660cb58bb2faefb46eb376eef0753a3570a2ab8"
+        },
+        "rasterize_grid1000_dem30.csv": {
+          "bytes": 9625,
+          "sha256": "d170aee9453307898e1b9c4f10ce8bb801bb38b5c4f831c868a8d8f9a89f176b"
+        },
+        "rasterize_grid1000_dem60.csv": {
+          "bytes": 8651,
+          "sha256": "4745575fc0e17a030849fc94d1c93cb9e43ba9bc0b547475e81d40b88a61b984"
+        },
+        "rasterize_grid1000_imp30.csv": {
+          "bytes": 9626,
+          "sha256": "7f77845eab6bfde1402ce75f27e589c5338c05ba386087d54dab499cd48148a1"
+        },
+        "rasterize_grid100_clc100.csv": {
+          "bytes": 789288,
+          "sha256": "b3936ac0f3ec8e30177800cb0392ff14e4b5cd94ee2518c608c96d1d54f9c7c7"
+        },
+        "rasterize_grid100_dem120.csv": {
+          "bytes": 789288,
+          "sha256": "17d0ef6a8d733c73100780cfc71cf973eeca94d1d1e741971cbe6f884f44ae46"
+        },
+        "rasterize_grid100_dem30.csv": {
+          "bytes": 844176,
+          "sha256": "bd5edbae07046f5bce9ec07d0d3e599bfede64430db65015d96c0d1022fb0e0e"
+        },
+        "rasterize_grid100_dem60.csv": {
+          "bytes": 789288,
+          "sha256": "e7c3f24d95f87822851794e5c508366ab67784e78410b7e35bc98dbc3dc18ce1"
+        },
+        "rasterize_grid100_imp30.csv": {
+          "bytes": 844143,
+          "sha256": "069b1beebd61f1639f81ec02831fc649f7340693bea433edff2a3580ce87e53d"
+        },
+        "rasterize_grid250_clc100.csv": {
+          "bytes": 119224,
+          "sha256": "0536d70b8284e49ef3d604f3efa0c3a12ec9351e215e2d6d9b8317868ea1dc55"
+        },
+        "rasterize_grid250_dem120.csv": {
+          "bytes": 119221,
+          "sha256": "d44dc8f7658e3236f8e814aab13092cfa7d2212e39b6e32057543ece82e759ff"
+        },
+        "rasterize_grid250_dem30.csv": {
+          "bytes": 135356,
+          "sha256": "407af0c7b9a7124d7f46f20326b9cd0ae0c07fbb8b2549200c07664ae355b029"
+        },
+        "rasterize_grid250_dem60.csv": {
+          "bytes": 135076,
+          "sha256": "5a99bda2d31dd9feb7e8ab7b89cc2c56e7c121a9d0d9988947fc70ff05a30456"
+        },
+        "rasterize_grid250_imp30.csv": {
+          "bytes": 135351,
+          "sha256": "5f0020594e76f6c457a067f4580a9f65e07615a78e0fffda90a2c705bcef61fc"
+        },
+        "rasterize_grid500_clc100.csv": {
+          "bytes": 32181,
+          "sha256": "d9fb0ef9de8335d8d0053a737f4ce4378c432ac91b9ff3bd6bc1eb24dcbe4e09"
+        },
+        "rasterize_grid500_dem120.csv": {
+          "bytes": 32128,
+          "sha256": "ac46497453096f5268adea889b132e8b3387e582a3e3f2f364147aec1db127be"
+        },
+        "rasterize_grid500_dem30.csv": {
+          "bytes": 36310,
+          "sha256": "99dc0038ad0198b18e0712b44a8955db220491e405dd7c15f7bedd2eefc749d6"
+        },
+        "rasterize_grid500_dem60.csv": {
+          "bytes": 32250,
+          "sha256": "6ba2bfb20232745d4e809407984f9570a645aab84d95600d2bd885cc424a6ce2"
+        },
+        "rasterize_grid500_imp30.csv": {
+          "bytes": 36311,
+          "sha256": "62b83617607264ca88e62f4cf5bb925d65bf329326a76b0b0a8c27d8b6ea950a"
+        },
+        "ratio_grid1000_dem30_dem60.csv": {
+          "bytes": 24904,
+          "sha256": "97ce0b9ffd879cc69ee4c22ab32529756c9cbac30034ad6fcd161dceada1ecc6"
+        },
+        "ratio_grid100_dem30_dem60.csv": {
+          "bytes": 2471741,
+          "sha256": "6498e095746603aa347e88e8c7eed3fd047f5a594add784a9af8eb5b9c981973"
+        },
+        "ratio_grid250_dem30_dem60.csv": {
+          "bytes": 393146,
+          "sha256": "a36d7cb884cf967a6a9b3ab770595a81096179671cb05469833ba7470d578cdb"
+        },
+        "ratio_grid500_dem30_dem60.csv": {
+          "bytes": 98434,
+          "sha256": "a092d0e7c501dc02743aca2b0c594731cd6f75238d0807284719d2cec7bf9f14"
+        }
+      },
+      "note": "C# baseline outputs (FzBench expected), stored with the archive"
+    }
+  },
+  "generated": {
+    "synthetic_small": {
+      "files": {
+        "check_mean_zone0.txt": {
+          "bytes": 19,
+          "sha256": "7d4eeaf564baada2856a65675468fa0b5fde756d327ad96a77f296b3541c8d2d"
+        },
+        "fixture.json": {
+          "bytes": 166,
+          "sha256": "6d2105d973bdcae763e44ee26990a6a2f262f53096cb11d406ba0f0095187e29"
+        },
+        "raster_synth.bin": {
+          "bytes": 240000,
+          "sha256": "c80c0b64e2c77324bd1d961ce3347f6c730be1575f1e3c4fb87dce38743361a9"
+        },
+        "raster_synth.json": {
+          "bytes": 217,
+          "sha256": "9d1600cc900b322a15dffe8e8e8263c7c10bee64464979434fbf47e7c4f96f51"
+        },
+        "zones_rect.centroid_rc_synth.i32": {
+          "bytes": 400,
+          "sha256": "f1f46aa0a384b6d95617c7765c51728f9584c899c25255cdc3a07d516884cc66"
+        },
+        "zones_rect.json": {
+          "bytes": 139,
+          "sha256": "5cf464c32b58c215df726b8ec46f1a840fd4c3b9a4de0b54dac9213bde8e1d4a"
+        },
+        "zones_rect.ring_is_hole.u8": {
+          "bytes": 50,
+          "sha256": "cc2786e1f9910a9d811400edcddaf7075195f7a16b216dcbefba3bc7c4f2ae51"
+        },
+        "zones_rect.ring_start.i64": {
+          "bytes": 408,
+          "sha256": "b7cf64c7605922573239c650e8fa41d791494f89d479d0e763900901cc7eaf64"
+        },
+        "zones_rect.ring_zone.i32": {
+          "bytes": 200,
+          "sha256": "f234d0f65ba480abeac60b2ef9635cb0598776c0223f709cda254f196e6f8486"
+        },
+        "zones_rect.xy.f64": {
+          "bytes": 3200,
+          "sha256": "7a25330799da48e1548e657c38d7033ec3d2fcc5cf93967eebe0595664dc3f06"
+        }
+      },
+      "fixture": {
+        "id": "synthetic_small",
+        "rasters": [
+          "synth"
+        ],
+        "zones": [
+          "rect"
+        ],
+        "area_km2": null,
+        "notes": "synthetic 300x200, 50 rectangles, seed 7"
+      },
+      "note": "reproduced by benchmarks/make_synthetic.py; hashes pin the bytes"
     }
   }
 }

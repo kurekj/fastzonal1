@@ -50,3 +50,12 @@ def test_multipolygon_cells_keep_one_id():
     assert len(cells) == 1
     assert cells[0].geom_type in ("Polygon", "MultiPolygon")
     assert ids == [0]
+
+
+def test_zero_threshold_never_returns_non_polygons():
+    tri = Polygon([(0, 0), (300, 0), (0, 300)])
+    cells, _ = grid.square_grid(tri, 100.0, min_area_share=0.0)
+    assert cells
+    for c in cells:
+        assert c.geom_type in ("Polygon", "MultiPolygon")
+        assert c.area > 0

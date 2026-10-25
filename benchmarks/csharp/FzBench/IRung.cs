@@ -8,6 +8,9 @@ public interface IRung
 {
     string Name { get; }
 
+    /// <summary>Threads the rung actually used in its last call (the baseline is always 1).</summary>
+    int EffectiveThreads { get; }
+
     /// <summary>Rasterises the zone set onto the raster's grid and returns the rung-native mask.</summary>
     object Rasterize(Fixture f, string zones, string raster);
 
@@ -17,9 +20,9 @@ public interface IRung
     /// <summary>Mode per zone, ties to the smallest value, centroid fallback.</summary>
     double[] Majority(Fixture f, string zones, string raster, object mask);
 
-    /// <summary>Mean per zone of the cell-wise ratio num / den after the denominator has been put on
-    /// the numerator's grid (nearest neighbour, done by <see cref="Fixture.ResampleNearest"/>).</summary>
-    double[] Ratio(Fixture f, string zones, string num, string den, object mask);
+    /// <summary>Mean per zone of the cell-wise ratio num / den. <paramref name="denOnGrid"/> is already on
+    /// the numerator's grid (<see cref="Fixture.PrepareDenominator"/>, done once by the driver).</summary>
+    double[] Ratio(Fixture f, string zones, string num, RasterData denOnGrid, object mask);
 
     int[] MaskToArray(object mask);
 }

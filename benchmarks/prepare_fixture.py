@@ -121,8 +121,14 @@ def main(argv=None):
         raster = load_raster(args.raster)
     if args.zones:
         zones = load_zones(args.zones, args.zone_field)
+    new_crs = raster[3] if raster else zones[2]
     if raster and zones and raster[3] != zones[2]:
         sys.exit(f"CRS mismatch: raster {raster[3]} vs zones {zones[2]}")
+    # every header already in the fixture must agree with the new data before anything is written
+    for hj in sorted(out.glob("raster_*.json")) + sorted(out.glob("zones_*.json")):
+        meta = json.loads(hj.read_text(encoding="utf-8"))
+        if meta.get("crs") != new_crs:
+            sys.exit(f"CRS mismatch: {hj.name} is {meta.get('crs')}, new data is {new_crs}")
 
     if raster:
         data, transform, nodata, crs = raster
@@ -133,25 +139,15 @@ def main(argv=None):
         io.write_zones(out / f"zones_{args.zones_name}.json", geoms, list(range(len(geoms))),
                        {"crs": crs, "source": args.source or str(args.zones.name), "licence": args.licence},
                        source_ids=ids)
-    # centroid cells for every raster grid present in the fixture, for every zone set present
-    if zones:
-        geoms = zones[0]
-        for rj in sorted(out.glob("raster_*.json")):
-            meta = json.loads(rj.read_text(encoding="utf-8"))
-            if meta.get("crs") != zones[2]:
-                sys.exit(f"CRS mismatch: raster {rj.name} is {meta.get('crs')}, zones are {zones[2]}")
-            rname = rj.name[len("raster_"):-len(".json")]
-            io.write_centroids(out, args.zones_name, rname, io.centroid_cells(geoms, meta["transform"]))
-    elif raster:
-        for zj in sorted(out.glob("zones_*.json")):
-            zname = zj.name[len("zones_"):-len(".json")]
-            zmeta = json.loads(zj.read_text(encoding="utf-8"))
-            if zmeta.get("crs") != raster[3]:
-                sys.exit(f"CRS mismatch: zones {zj.name} are {zmeta.get('crs')}, raster is {raster[3]}")
-            if args.zones is None:
-                # centroids need the geometries; they are recomputed only when the zone layer is given
-                print(f"note: centroids for {zname} on {args.name} are written when the zone layer is passed again",
-                      file=sys.stderr)
+    # centroid cells for every (zone set, raster) pair of the fixture; zone sets written earlier are
+    # rebuilt from their ring arrays so a raster added later gets its centroid file too
+    rasters = {rj.name[len("raster_"):-len(".json")]: json.loads(rj.read_text(encoding="utf-8"))
+               for rj in sorted(out.glob("raster_*.json"))}
+    for zj in sorted(out.glob("zones_*.json")):
+        zname = zj.name[len("zones_"):-len(".json")]
+        geoms = zones[0] if (zones and zname == args.zones_name) else io.zones_to_polygons(io.read_zones(zj))
+        for rname, meta in rasters.items():
+            io.write_centroids(out, zname, rname, io.centroid_cells(geoms, meta["transform"]))
     update_fixture_json(out, fixture_id, args.name, args.zones_name, args.notes)
     return 0
 

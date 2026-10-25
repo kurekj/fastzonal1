@@ -156,3 +156,38 @@ def test_prepare_fixture_writes_layout(tmp_path):
     fixture = json.loads((out / "fixture.json").read_text())
     assert fixture["id"] == "fx"
     assert "dem" in fixture["rasters"] and "grid" in fixture["zones"]
+
+
+# ---- cases added after the independent review of the fixture tooling ----
+
+def test_nan_nodata_is_written_as_null(tmp_path):
+    arr = np.array([[1.0, np.nan], [3.0, 4.0]], dtype=np.float32)
+    path = tmp_path / "raster_n.json"
+    io.write_raster(path, arr, (0.0, 2.0, 1.0, 1.0), float("nan"), {})
+    text = path.read_text()
+    assert "NaN" not in text and "nan" not in text
+    json.loads(text)  # strict parsers must accept the header
+    back, meta = io.read_raster(path)
+    assert meta["nodata"] is None
+    assert np.isnan(back[0, 1])
+
+
+def test_infinite_nodata_is_rejected(tmp_path):
+    arr = np.zeros((2, 2), dtype=np.float32)
+    with pytest.raises(ValueError):
+        io.write_raster(tmp_path / "raster_i.json", arr, (0.0, 2.0, 1.0, 1.0), float("inf"), {})
+
+
+def test_synthetic_small_bytes_are_fixed(tmp_path):
+    """The committed synthetic fixture must be reproducible bit for bit on every platform."""
+    import hashlib
+
+    out = tmp_path / "synthetic_small"
+    subprocess.run([sys.executable, str(BENCH / "make_synthetic.py"), "--width", "300", "--height", "200",
+                    "--zones", "50", "--seed", "7", "--out", str(out)], check=True)
+    raster_hash = hashlib.sha256((out / "raster_synth.bin").read_bytes()).hexdigest()
+    zones_hash = hashlib.sha256((out / "zones_rect.xy.f64").read_bytes()).hexdigest()
+    assert raster_hash == "c80c0b64e2c77324bd1d961ce3347f6c730be1575f1e3c4fb87dce38743361a9"
+    assert zones_hash == "7a25330799da48e1548e657c38d7033ec3d2fcc5cf93967eebe0595664dc3f06"
+    z = io.read_zones(out / "zones_rect.json")
+    assert z["meta"]["licence"] == "MIT"

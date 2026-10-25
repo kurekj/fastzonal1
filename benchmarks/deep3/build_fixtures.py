@@ -57,15 +57,26 @@ FIXTURES = [
          note="Wkra basin (Mazovia, Poland), the 5,000 km2 scaling workload"),
 ]
 
+# Upstream products behind the PostGIS layers. The layers were loaded into the SpongeGIS database
+# by its import scripts (SPONGEGIS2026.NET, scripts/data-imports, May and September 2026): the
+# terrain tiles are GEDTM30 reprojected to EPSG:3035 and generalised by averaging to 60 m and
+# 120 m, CLC 2018 is the vector product in EPSG:3035, imperviousness is the 10 m product resampled
+# to 30 m (bilinear). The fixture archive published with the paper is the reviewer's route; the
+# database is only needed to rebuild it.
 SOURCES = {
-    "dem30": ("GEDTM30 global ensemble DTM, 30 m, OpenGeoHub (PostGIS table dem30)", "CC BY 4.0"),
-    "dem60": ("GEDTM30 generalised to 60 m (PostGIS table dem60)", "CC BY 4.0"),
-    "dem120": ("GEDTM30 generalised to 120 m (PostGIS table dem120)", "CC BY 4.0"),
-    "clc100": ("CORINE Land Cover 2018 class code (code_18) rasterised at 100 m from PostGIS table landuse_clc",
-               "Copernicus Land Monitoring Service, free with attribution"),
-    "imp30": ("Copernicus Imperviousness Density 2018 at 30 m (PostGIS table urban_imp30), 255 -> NoData",
-              "Copernicus Land Monitoring Service, free with attribution"),
-    "grid": ("square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline", "CC BY 4.0"),
+    "dem30": ("GEDTM30 global ensemble digital terrain model, 30 m, OpenGeoHub 2024, "
+              "https://github.com/openlandmap/GEDTM30 (PostGIS table dem30, EPSG:3035)", "CC BY 4.0"),
+    "dem60": ("GEDTM30 averaged to 60 m during the SpongeGIS import (PostGIS table dem60)", "CC BY 4.0"),
+    "dem120": ("GEDTM30 averaged to 120 m during the SpongeGIS import (PostGIS table dem120)", "CC BY 4.0"),
+    "clc100": ("CORINE Land Cover 2018 (CLC2018 v2020_20u1, vector), class code CODE_18 rasterised at 100 m "
+               "from PostGIS table landuse_clc; https://land.copernicus.eu/en/products/corine-land-cover/clc2018",
+               "Copernicus Land Monitoring Service: free, full and open access with attribution"),
+    "imp30": ("Copernicus High Resolution Layer Imperviousness Density 2018 (10 m) resampled to 30 m during the "
+              "SpongeGIS import (PostGIS table urban_imp30); 255 (unclassifiable) and the declared NoData -> -9999; "
+              "https://land.copernicus.eu/en/products/high-resolution-layer-imperviousness/imperviousness-density-2018",
+              "Copernicus Land Monitoring Service: free, full and open access with attribution"),
+    "grid": ("square grid aligned to the cell size, clipped to a HydroBASINS v1c basin outline "
+             "(https://www.hydrosheds.org/products/hydrobasins), reprojected to EPSG:3035", "CC BY 4.0"),
 }
 
 
@@ -196,7 +207,11 @@ def build_fixture(spec, src: Path, out: Path, basins_cache: dict):
         elif name == "imp30":
             arr, tr, nd = fetch_raster_table("urban_imp30", snapped_envelope(boundary.bounds, 30.0))
             arr = arr.astype(np.float32)
-            arr[arr == (255 if nd is None else nd)] = -9999.0
+            invalid = arr == 255  # the product's unclassifiable code, independent of the declared NoData
+            if nd is not None:
+                invalid |= arr == np.float32(nd)
+            invalid |= ~np.isfinite(arr)
+            arr[invalid] = -9999.0
             write_raster(fdir, name, arr, tr, -9999.0)
         else:
             cell = {"dem30": 30.0, "dem60": 60.0, "dem120": 120.0}[name]
@@ -237,19 +252,31 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def write_manifest(out: Path, built: list[Path]):
+def file_table(directory: Path) -> dict:
+    return {p.name: {"bytes": p.stat().st_size, "sha256": sha256(p)} for p in sorted(directory.iterdir()) if p.is_file()}
+
+
+def write_manifest(out: Path, built: list[Path], expected: Path | None, generated: list[Path]):
     manifest_path = out / "manifest.json"
     doc = json.loads(manifest_path.read_text()) if manifest_path.exists() else {
         "archive": {"url": "https://zenodo.org/record/TODO/files/fixtures-v1.tar.zst", "sha256": None},
-        "fixtures": {}}
+        "fixtures": {}, "expected": {}, "generated": {}}
+    doc.setdefault("expected", {})
+    doc.setdefault("generated", {})
     for fdir in built:
-        files = {}
-        for p in sorted(fdir.iterdir()):
-            files[p.name] = {"bytes": p.stat().st_size, "sha256": sha256(p)}
-        doc["fixtures"][fdir.name] = {"fixture": json.loads((fdir / "fixture.json").read_text()), "files": files,
-                                      "sources": SOURCES}
-    manifest_path.write_text(json.dumps(doc, indent=2) + "\n")
-    log(f"manifest: {manifest_path} ({len(doc['fixtures'])} fixtures)")
+        doc["fixtures"][fdir.name] = {"fixture": json.loads((fdir / "fixture.json").read_text()),
+                                      "files": file_table(fdir), "sources": SOURCES}
+    if expected is not None and expected.exists():
+        for edir in sorted(p for p in expected.iterdir() if p.is_dir()):
+            doc["expected"][edir.name] = {"files": file_table(edir),
+                                          "note": "C# baseline outputs (FzBench expected), stored with the archive"}
+    for gdir in generated:
+        doc["generated"][gdir.name] = {"files": file_table(gdir), "fixture": json.loads((gdir / "fixture.json").read_text()),
+                                       "note": "reproduced by benchmarks/make_synthetic.py; hashes pin the bytes"}
+    with open(manifest_path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(doc, indent=2) + "\n")
+    log(f"manifest: {manifest_path} ({len(doc['fixtures'])} fixtures, {len(doc['expected'])} expected sets, "
+        f"{len(doc['generated'])} generated)")
 
 
 def main(argv=None):
@@ -261,6 +288,8 @@ def main(argv=None):
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--src", type=Path, required=True, help="download cache for HydroBASINS")
     ap.add_argument("--only", nargs="*", default=None)
+    ap.add_argument("--expected", type=Path, default=None, help="directory of C# expected outputs to list")
+    ap.add_argument("--generated", type=Path, nargs="*", default=[], help="generated fixture dirs to list")
     args = ap.parse_args(argv)
     args.out.mkdir(parents=True, exist_ok=True)
     args.src.mkdir(parents=True, exist_ok=True)
@@ -270,7 +299,7 @@ def main(argv=None):
         if args.only and spec["id"] not in args.only:
             continue
         built.append(build_fixture(spec, args.src, args.out, basins))
-    write_manifest(args.out, built)
+    write_manifest(args.out, built, args.expected, args.generated)
     return 0
 
 

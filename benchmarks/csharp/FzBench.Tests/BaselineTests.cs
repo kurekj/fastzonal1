@@ -66,7 +66,8 @@ public class BaselineTests
         var fixture = Fixture.Load(FixtureDir("synthetic_small"));
         var rung = new BaselineRung();
         var mask = rung.Rasterize(fixture, "rect", "synth");
-        var ratio = rung.Ratio(fixture, "rect", "synth", "synth", mask);
+        var den = Fixture.PrepareDenominator(fixture.Rasters["synth"], fixture.Rasters["synth"]);
+        var ratio = rung.Ratio(fixture, "rect", "synth", den, mask);
         foreach (var r in ratio) Assert.True(r == 0.0 || Math.Abs(r - 1.0) < 1e-12);
     }
 }

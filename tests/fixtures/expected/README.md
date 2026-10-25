@@ -9,5 +9,6 @@ and one line per zone with the value printed in round-trip (`R`) format:
 - `majority_<zones>_<raster>.csv`: mode (ties to the smallest value) with the centroid fallback
 - `ratio_<zones>_<num>_<den>.csv`: mean of the cell-wise ratio on the numerator grid
 
-The committed fixtures are `synthetic_small` and `leze_micro`; the expected outputs of the larger
-fixtures live next to the fixtures themselves (see benchmarks/fixtures/manifest.json).
+The committed fixtures are `synthetic_small` and `leze_micro`. The expected outputs of the larger
+fixtures are part of the published fixture archive (`expected/<fixture>/` inside it) and are
+listed with hashes under `expected` in benchmarks/fixtures/manifest.json.
