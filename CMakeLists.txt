@@ -74,6 +74,22 @@ target_include_directories(fz_fixture_io PUBLIC src/tools)
 target_link_libraries(fz_fixture_io PUBLIC fastzonal)
 target_compile_features(fz_fixture_io PUBLIC cxx_std_17)
 
+# Copies the built native library where the .NET binding and its tests look for it.
+if(WIN32)
+    set(FASTZONAL_DOTNET_RID "win-x64")
+elseif(APPLE)
+    set(FASTZONAL_DOTNET_RID "osx-x64")
+else()
+    set(FASTZONAL_DOTNET_RID "linux-x64")
+endif()
+add_custom_target(dotnet_native_copy
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/bindings/dotnet/FastZonal/runtimes/${FASTZONAL_DOTNET_RID}/native
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fastzonal>
+        ${CMAKE_CURRENT_SOURCE_DIR}/bindings/dotnet/FastZonal/runtimes/${FASTZONAL_DOTNET_RID}/native/
+    DEPENDS fastzonal
+    COMMENT "Copying the native library into bindings/dotnet/FastZonal/runtimes/${FASTZONAL_DOTNET_RID}/native")
+
 if(FASTZONAL_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)

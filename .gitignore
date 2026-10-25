@@ -24,5 +24,8 @@ benchmarks/fixtures/*/
 !benchmarks/fixtures/FORMAT.md
 !benchmarks/fixtures/manifest.json
 
+# native binaries copied for the .NET binding
+bindings/dotnet/FastZonal/runtimes/
+
 # logs
 *.log

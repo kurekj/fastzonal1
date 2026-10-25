@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>FastZonal</RootNamespace>
+    <Version>0.1.0</Version>
+    <Authors>Jarosław Kurek</Authors>
+    <Description>.NET binding of fastzonal: zonal statistics and polygon rasterisation over raster grids.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- The native library is placed under runtimes/<rid>/native by the CMake target
+       dotnet_native_copy (or by hand); it is copied next to the build output so tests and
+       consumers find it through the default probing of NativeLibrary. -->
+  <ItemGroup>
+    <None Include="runtimes/**/*" Pack="true" PackagePath="runtimes" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

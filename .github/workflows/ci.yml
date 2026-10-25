@@ -18,6 +18,20 @@ jobs:
         run: cmake --build --preset release
       - name: Test
         run: ctest --preset release
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Copy native library for the .NET binding
+        run: cmake --build --preset release --target dotnet_native_copy
+      - name: .NET binding tests
+        run: dotnet test bindings/dotnet/FastZonal.slnx
+      - name: C# harness tests
+        run: dotnet test benchmarks/csharp/FzBench.slnx
+      - name: Python script tests
+        run: |
+          python3 -m pip install --quiet numpy rasterio pyogrio shapely pyproj pytest
+          python3 -m pytest benchmarks/tests -q
       - name: Upload test logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -35,6 +49,14 @@ jobs:
         run: cmake --build --preset release-msvc
       - name: Test
         run: ctest --preset release-msvc
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Copy native library for the .NET binding
+        run: cmake --build --preset release-msvc --target dotnet_native_copy
+      - name: .NET binding tests
+        run: dotnet test bindings/dotnet/FastZonal.slnx
       - name: Upload test logs on failure
         if: failure()
         uses: actions/upload-artifact@v4

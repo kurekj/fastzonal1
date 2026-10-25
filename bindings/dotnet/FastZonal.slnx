@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="FastZonal.Tests/FastZonal.Tests.csproj" />
+  <Project Path="FastZonal/FastZonal.csproj" />
+</Solution>
