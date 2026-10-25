@@ -1,0 +1,11 @@
+{
+  "id": "leze_micro",
+  "rasters": [
+    "dem30"
+  ],
+  "zones": [
+    "grid250"
+  ],
+  "area_km2": 157.72,
+  "notes": "Leze (Ariege, France), the micro-scale case study region; small enough to commit; HydroBASINS v1c level 10 HYBAS_ID 2100579650"
+}

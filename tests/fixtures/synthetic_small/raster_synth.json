@@ -1,0 +1,16 @@
+{
+  "dtype": "f32",
+  "width": 300,
+  "height": 200,
+  "transform": [
+    0.0,
+    200.0,
+    1.0,
+    1.0
+  ],
+  "nodata": -9999.0,
+  "crs": "none",
+  "source": "make_synthetic.py",
+  "licence": "MIT",
+  "seed": 7
+}

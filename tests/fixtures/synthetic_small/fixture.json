@@ -1,0 +1,11 @@
+{
+  "id": "synthetic_small",
+  "rasters": [
+    "synth"
+  ],
+  "zones": [
+    "rect"
+  ],
+  "area_km2": null,
+  "notes": "synthetic 300x200, 50 rectangles, seed 7"
+}

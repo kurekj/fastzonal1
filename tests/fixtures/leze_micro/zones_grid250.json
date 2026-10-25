@@ -1,0 +1,9 @@
+{
+  "n_zones": 2688,
+  "n_rings": 2688,
+  "n_points": 10856,
+  "crs": "EPSG:3035",
+  "source": "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline; HYBAS_ID 2100579650",
+  "licence": "CC BY 4.0",
+  "cell_size_m": 250
+}

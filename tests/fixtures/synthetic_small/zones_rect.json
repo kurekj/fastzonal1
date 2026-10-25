@@ -1,0 +1,8 @@
+{
+  "n_zones": 50,
+  "n_rings": 50,
+  "n_points": 200,
+  "crs": "none",
+  "source": "make_synthetic.py",
+  "seed": 7
+}

@@ -1,0 +1,727 @@
+{
+  "archive": {
+    "url": "https://zenodo.org/record/TODO/files/fixtures-v1.tar.zst",
+    "sha256": null
+  },
+  "fixtures": {
+    "leze_micro": {
+      "fixture": {
+        "id": "leze_micro",
+        "rasters": [
+          "dem30"
+        ],
+        "zones": [
+          "grid250"
+        ],
+        "area_km2": 157.72,
+        "notes": "Leze (Ariege, France), the micro-scale case study region; small enough to commit; HydroBASINS v1c level 10 HYBAS_ID 2100579650"
+      },
+      "files": {
+        "fixture.json": {
+          "bytes": 252,
+          "sha256": "8b03c91230fdfa4a1b13e22ffb8f2c077ecc0e33e9621fe8e5550e44293a7999"
+        },
+        "raster_dem30.bin": {
+          "bytes": 1753800,
+          "sha256": "cf2e48f1892bbe2675308420d5eec72ecc01b80f265c0090b611fe3d9312f15c"
+        },
+        "raster_dem30.json": {
+          "bytes": 293,
+          "sha256": "9112ede5c4db1b27448ee35b5e011bd5936b5c2238faf96c29eab34fe8ad33ac"
+        },
+        "zones_grid250.centroid_rc_dem30.i32": {
+          "bytes": 21504,
+          "sha256": "2460010f7744c16e1d6e9b21a1f9de57ce2b62b6868ad028628f0d46a1ab6a2a"
+        },
+        "zones_grid250.ids.i64": {
+          "bytes": 21504,
+          "sha256": "f75bd0a9afa78920ea5b9badf478708b498433a01f37fe13d74c2f57a01be701"
+        },
+        "zones_grid250.json": {
+          "bytes": 251,
+          "sha256": "bba522c467652b9ea09a30378686398f5fcad02f4bb50f9d2a89bfce857a9708"
+        },
+        "zones_grid250.ring_is_hole.u8": {
+          "bytes": 2688,
+          "sha256": "bb270d5b01806f81489807bec2d3a07d07d3df4ecca188d9390cf4323ddbbee1"
+        },
+        "zones_grid250.ring_start.i64": {
+          "bytes": 21512,
+          "sha256": "08a53977ccc48315fa83d8a4d7039de3548cce9525e9ce8cfaf03aebb9469a99"
+        },
+        "zones_grid250.ring_zone.i32": {
+          "bytes": 10752,
+          "sha256": "678aa22201946d338f4978021b571e5941d84cffa37a696916e091c0fd4920ac"
+        },
+        "zones_grid250.xy.f64": {
+          "bytes": 173696,
+          "sha256": "b33612412b53974cfd1deaddcfa36698f002ca5e94ce5b9cf9bb52abd72e8771"
+        }
+      },
+      "sources": {
+        "dem30": [
+          "GEDTM30 global ensemble DTM, 30 m, OpenGeoHub (PostGIS table dem30)",
+          "CC BY 4.0"
+        ],
+        "dem60": [
+          "GEDTM30 generalised to 60 m (PostGIS table dem60)",
+          "CC BY 4.0"
+        ],
+        "dem120": [
+          "GEDTM30 generalised to 120 m (PostGIS table dem120)",
+          "CC BY 4.0"
+        ],
+        "clc100": [
+          "CORINE Land Cover 2018 class code (code_18) rasterised at 100 m from PostGIS table landuse_clc",
+          "Copernicus Land Monitoring Service, free with attribution"
+        ],
+        "imp30": [
+          "Copernicus Imperviousness Density 2018 at 30 m (PostGIS table urban_imp30), 255 -> NoData",
+          "Copernicus Land Monitoring Service, free with attribution"
+        ],
+        "grid": [
+          "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline",
+          "CC BY 4.0"
+        ]
+      }
+    },
+    "biebrza_upper": {
+      "fixture": {
+        "id": "biebrza_upper",
+        "rasters": [
+          "dem30",
+          "dem60",
+          "dem120",
+          "clc100",
+          "imp30"
+        ],
+        "zones": [
+          "grid1000",
+          "grid500",
+          "grid250",
+          "grid100"
+        ],
+        "area_km2": 989.21,
+        "notes": "Upper Biebrza (Podlaskie, Poland), the end-to-end case study; HydroBASINS v1c level 8 HYBAS_ID 2080337650"
+      },
+      "files": {
+        "fixture.json": {
+          "bytes": 334,
+          "sha256": "a723bf8d1c7802c126daeca1fd905662caf77e7cc38f877966151810f462ced1"
+        },
+        "raster_clc100.bin": {
+          "bytes": 813616,
+          "sha256": "b93fc19a85dda1a8be2b86ef2b2ee30578928751a0cf614fd48505ec1d7dc23c"
+        },
+        "raster_clc100.json": {
+          "bytes": 350,
+          "sha256": "4ee182fdc4f6d366287896584fe46b050489bda085d28d7df2276b87bd6a6908"
+        },
+        "raster_dem120.bin": {
+          "bytes": 564608,
+          "sha256": "e9db8c485ec68f3abd034300a778567bfac1bbd291a45fdc753915d02c0d3348"
+        },
+        "raster_dem120.json": {
+          "bytes": 263,
+          "sha256": "e7c9e7a1d8e3fb31748e39fdeba540ebf3c3b6b46037be624a891bbe2751e59b"
+        },
+        "raster_dem30.bin": {
+          "bytes": 9001648,
+          "sha256": "6a0cffc7810ce6a82dd14dc753000b90733a136d435c0a727c01e29a2dc2dae5"
+        },
+        "raster_dem30.json": {
+          "bytes": 295,
+          "sha256": "276aed3fd570a78325a5f0febbe54f94b10e2bbe5563d1a4a24f719511840bd9"
+        },
+        "raster_dem60.bin": {
+          "bytes": 2252016,
+          "sha256": "d12e9f33174b5bbd05e373a98eca26e92dd1fc71c8970088ee3befb06e44b672"
+        },
+        "raster_dem60.json": {
+          "bytes": 259,
+          "sha256": "ed5028689b33e26105de57ead8a3e93140173c6b50290042d9e2572b118c1bc5"
+        },
+        "raster_imp30.bin": {
+          "bytes": 9001648,
+          "sha256": "d3267ea0080723f0f98ce1bab6eabad843cea3d01f392f93ce3166ba355797ad"
+        },
+        "raster_imp30.json": {
+          "bytes": 349,
+          "sha256": "bb1e0d57bb683de9124cf5bf8d40d7716be67e7d53753c4e50efc652b0cea88f"
+        },
+        "zones_grid100.centroid_rc_clc100.i32": {
+          "bytes": 800344,
+          "sha256": "6ef969b753cf3c6673949d44745a1ffc942adb89d2d178f347fc9811c8e855e8"
+        },
+        "zones_grid100.centroid_rc_dem120.i32": {
+          "bytes": 800344,
+          "sha256": "ce82c3f6e7aa85ec352c7e9b2a821d2db73b851802cdccc5c42fde28149140ea"
+        },
+        "zones_grid100.centroid_rc_dem30.i32": {
+          "bytes": 800344,
+          "sha256": "52a5f16dfcca0864633fa61e72ab1ce3e5e4ee4a3a0b0c99aa200df6246e60d4"
+        },
+        "zones_grid100.centroid_rc_dem60.i32": {
+          "bytes": 800344,
+          "sha256": "8a0c1d3119b508c836da0456a68ee046cd409d88edd0f09d092524e9531400e8"
+        },
+        "zones_grid100.centroid_rc_imp30.i32": {
+          "bytes": 800344,
+          "sha256": "e814cef84f693223d19c5aa81dbfd06a61bf92745ae10886683ba8ac7eafe46a"
+        },
+        "zones_grid100.ids.i64": {
+          "bytes": 800344,
+          "sha256": "e7b90105a9a80bdc1cb5eb69b713ed1ff4bf2c984b3c0ee8ead6476b58ea529e"
+        },
+        "zones_grid100.json": {
+          "bytes": 256,
+          "sha256": "c45bc3af8ff1e02203bc9a5db99cf137ab6855ba37bae5cb4a0b6bedd3e94818"
+        },
+        "zones_grid100.ring_is_hole.u8": {
+          "bytes": 100048,
+          "sha256": "c8f76f48a96a8049166f7393dfd639c165663bbd6edcce73743e80c1fa39e614"
+        },
+        "zones_grid100.ring_start.i64": {
+          "bytes": 800392,
+          "sha256": "b21a730a0704af164e8a0d3061a4633c4676d8bdff68a61336db5a1a63bbd518"
+        },
+        "zones_grid100.ring_zone.i32": {
+          "bytes": 400192,
+          "sha256": "c16f393bcf6bd3cf4c5ccf964e037db3c574e94a9e37e4489bab9192a4eb750f"
+        },
+        "zones_grid100.xy.f64": {
+          "bytes": 6410688,
+          "sha256": "024d82c5c7a2dbf68092e12599b7a1be9e5de5f82ec20e6ecf507cd14ba6c442"
+        },
+        "zones_grid1000.centroid_rc_clc100.i32": {
+          "bytes": 8736,
+          "sha256": "2ad1cbf2cfc0ff2c7e053f0b7e1c55363618577eab565a28eb4c52289b9ed7ea"
+        },
+        "zones_grid1000.centroid_rc_dem120.i32": {
+          "bytes": 8736,
+          "sha256": "4b8d5ff1bfe523f3de7fb99cec7b091fa39247ba4020745ad366711eca643e58"
+        },
+        "zones_grid1000.centroid_rc_dem30.i32": {
+          "bytes": 8736,
+          "sha256": "c2a58947aa59a2c376e6083976f88f5998026236bf446b5e76ce46d13c81e7dc"
+        },
+        "zones_grid1000.centroid_rc_dem60.i32": {
+          "bytes": 8736,
+          "sha256": "64e9af89df2dd76047ebc1572e53bbf53e073c32776997f45fa1e0aa6237256d"
+        },
+        "zones_grid1000.centroid_rc_imp30.i32": {
+          "bytes": 8736,
+          "sha256": "6dab34d9bc228f085bac7015a08e7dc4c6361e8b405d882e46837257466ee4cf"
+        },
+        "zones_grid1000.ids.i64": {
+          "bytes": 8736,
+          "sha256": "9996acf154e2b932cb6f0a1bff58ebba376ede12cca95032c622b8a870155acb"
+        },
+        "zones_grid1000.json": {
+          "bytes": 251,
+          "sha256": "6f4b65f86940c07dede21fe9180fe1b4f063f393206c0af7a409fdc0d188b0b8"
+        },
+        "zones_grid1000.ring_is_hole.u8": {
+          "bytes": 1094,
+          "sha256": "158506ded8f8a91e1b78badcb3818b69740f6bef0e8d2e324be70d15e3c691b6"
+        },
+        "zones_grid1000.ring_start.i64": {
+          "bytes": 8760,
+          "sha256": "477b5c27c7b539bd4027aff50a794a1ca47aaab7eaec8c1da9921074da9fd77a"
+        },
+        "zones_grid1000.ring_zone.i32": {
+          "bytes": 4376,
+          "sha256": "e4f8a83c1bd542d199800fa30920d9c92d32ac09c111a2b12f9e54ad055f6f60"
+        },
+        "zones_grid1000.xy.f64": {
+          "bytes": 75232,
+          "sha256": "57cf9596d3115c5ad4b68714cf7652fa82fad50f14dc5a47e89574bc833c76eb"
+        },
+        "zones_grid250.centroid_rc_clc100.i32": {
+          "bytes": 130320,
+          "sha256": "07aae771729375a1a859af207f6b3692f6e25f6e0426a5a49a0ea1edb4f924bb"
+        },
+        "zones_grid250.centroid_rc_dem120.i32": {
+          "bytes": 130320,
+          "sha256": "3ff96a7af12be78c813b017316e91e14ee9c956f13bdade8bee9e9ad528cf759"
+        },
+        "zones_grid250.centroid_rc_dem30.i32": {
+          "bytes": 130320,
+          "sha256": "f48b354c8f2842e265e832863ab90f520f29be3c1ba2dd4cc1731f4325ce6dfa"
+        },
+        "zones_grid250.centroid_rc_dem60.i32": {
+          "bytes": 130320,
+          "sha256": "0cacb9822952676122a3a3641d7b8c77ed1806447940633de8815477eaa97beb"
+        },
+        "zones_grid250.centroid_rc_imp30.i32": {
+          "bytes": 130320,
+          "sha256": "96534cf8524077650b267bfc61cf061f2fdf8932334f95e4ae2ce2a8d551b961"
+        },
+        "zones_grid250.ids.i64": {
+          "bytes": 130320,
+          "sha256": "343c98ab041b9a559eb1acc139bccfe75e549d4cf03be4514a3afc7ef58b691d"
+        },
+        "zones_grid250.json": {
+          "bytes": 253,
+          "sha256": "8a15ffc78569c3991a790227680e1653179d7642cb1ca4bf06e0390ff8b00514"
+        },
+        "zones_grid250.ring_is_hole.u8": {
+          "bytes": 16294,
+          "sha256": "68ac9ae9534f5984501a8fbd2244a0e359508eae06ad6c5a47f0dd2aa839540c"
+        },
+        "zones_grid250.ring_start.i64": {
+          "bytes": 130360,
+          "sha256": "4d098f6711209fce753a3101e08df5c6b56fad8a60ca6ab34575feed6e58d0a0"
+        },
+        "zones_grid250.ring_zone.i32": {
+          "bytes": 65176,
+          "sha256": "3f817787a778b792110e42f5c08f06b5f0735093ec63e09bdd0038b36f97f1ae"
+        },
+        "zones_grid250.xy.f64": {
+          "bytes": 1048608,
+          "sha256": "19900ae5bee64286c4bff4bfc1029abd5097bb3e2a4bbf0bca796272c89b4b12"
+        },
+        "zones_grid500.centroid_rc_clc100.i32": {
+          "bytes": 33424,
+          "sha256": "5b89dd015cc70e209010d90a6e88e746b07a5a361e5542f5a4dda37e885bae57"
+        },
+        "zones_grid500.centroid_rc_dem120.i32": {
+          "bytes": 33424,
+          "sha256": "f4d6bc5a0d8b1aaf5df0a5c777da4954e85a6eaa1cb757c5f95a82f0a1336b4b"
+        },
+        "zones_grid500.centroid_rc_dem30.i32": {
+          "bytes": 33424,
+          "sha256": "1ff6904098fdb07ffa8f554482ca39d56bf5ac1bc199245fdad042833f320b73"
+        },
+        "zones_grid500.centroid_rc_dem60.i32": {
+          "bytes": 33424,
+          "sha256": "db72b2b28b4e47c432c664e329e3eb4b17d08f952ce62409389783bd85a172d0"
+        },
+        "zones_grid500.centroid_rc_imp30.i32": {
+          "bytes": 33424,
+          "sha256": "d7b62b9f49b9f3973c1bfe20e240e7ddb5d16aca265754bdc1e25a8f1c42207f"
+        },
+        "zones_grid500.ids.i64": {
+          "bytes": 33424,
+          "sha256": "16305c4b992a6cb35c503355345ed279410deb173506e4be03f766837b3a1794"
+        },
+        "zones_grid500.json": {
+          "bytes": 251,
+          "sha256": "953004bde189d6fe3b6e28ff5de74f8e929297aa6a8aca1ed7dea9e26b13cca0"
+        },
+        "zones_grid500.ring_is_hole.u8": {
+          "bytes": 4180,
+          "sha256": "39ac11298a8264244e9866060f5aa77812ec9794a284427b8d741bf8178c0752"
+        },
+        "zones_grid500.ring_start.i64": {
+          "bytes": 33448,
+          "sha256": "175fe8cc129f67cbb9e8b1e707950fb598909789f28f503e73e67186b41686ff"
+        },
+        "zones_grid500.ring_zone.i32": {
+          "bytes": 16720,
+          "sha256": "c7ec7aab240b274dfae69f124fd89bdb1bb0e092526fbc0a5ce35615dfc937c2"
+        },
+        "zones_grid500.xy.f64": {
+          "bytes": 272928,
+          "sha256": "02c36746a49808ff653cdd9ab6db60e283b4b96255ffff53af51fc5a653cec18"
+        }
+      },
+      "sources": {
+        "dem30": [
+          "GEDTM30 global ensemble DTM, 30 m, OpenGeoHub (PostGIS table dem30)",
+          "CC BY 4.0"
+        ],
+        "dem60": [
+          "GEDTM30 generalised to 60 m (PostGIS table dem60)",
+          "CC BY 4.0"
+        ],
+        "dem120": [
+          "GEDTM30 generalised to 120 m (PostGIS table dem120)",
+          "CC BY 4.0"
+        ],
+        "clc100": [
+          "CORINE Land Cover 2018 class code (code_18) rasterised at 100 m from PostGIS table landuse_clc",
+          "Copernicus Land Monitoring Service, free with attribution"
+        ],
+        "imp30": [
+          "Copernicus Imperviousness Density 2018 at 30 m (PostGIS table urban_imp30), 255 -> NoData",
+          "Copernicus Land Monitoring Service, free with attribution"
+        ],
+        "grid": [
+          "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline",
+          "CC BY 4.0"
+        ]
+      }
+    },
+    "gradascica": {
+      "fixture": {
+        "id": "gradascica",
+        "rasters": [
+          "dem30",
+          "clc100"
+        ],
+        "zones": [
+          "grid250",
+          "grid100"
+        ],
+        "area_km2": 181.91,
+        "notes": "Gradascica (Slovenia), alpine case study; HydroBASINS v1c level 10 HYBAS_ID 2100529790"
+      },
+      "files": {
+        "fixture.json": {
+          "bytes": 241,
+          "sha256": "6b6ac7fff51bdd99f5bedb2d88a9487ba95e4704aab1e62858f04d8d46ae52b9"
+        },
+        "raster_clc100.bin": {
+          "bytes": 148896,
+          "sha256": "6478dbdca110707ea1e1c531b4ff0fec7bc3a543ebdfe21cb4a0437d19150894"
+        },
+        "raster_clc100.json": {
+          "bytes": 350,
+          "sha256": "f8608a20b1f6ec00104ff1bd54718005b01c9abf249946a24a9dca175bef908e"
+        },
+        "raster_dem30.bin": {
+          "bytes": 1634728,
+          "sha256": "6523d4e5035f2f2710fc32a59b0f0f6ca605637f61e1f95fcda5d986d41f82f7"
+        },
+        "raster_dem30.json": {
+          "bytes": 293,
+          "sha256": "1baf2e9bad39832efb1c5ad187408a127cd3faab1bc241d66f165a872ec17442"
+        },
+        "zones_grid100.centroid_rc_clc100.i32": {
+          "bytes": 148952,
+          "sha256": "f52d256f23827629fba426492280a3a6972ece96ba2cfa44b1117d4b08eb1d33"
+        },
+        "zones_grid100.centroid_rc_dem30.i32": {
+          "bytes": 148952,
+          "sha256": "aef3393fdb5d954d08f89378f5257f254d299f0500d95f376d3a3fb6b6e47ec9"
+        },
+        "zones_grid100.ids.i64": {
+          "bytes": 148952,
+          "sha256": "b2f08133e6b8cde70c14ac6b6d12543e6b600bb25d01511d6b9083fa402e9066"
+        },
+        "zones_grid100.json": {
+          "bytes": 253,
+          "sha256": "79c38c31d74816e3700d1d349861ad553a62ee72a5edcc1d7c0b2d26989bf148"
+        },
+        "zones_grid100.ring_is_hole.u8": {
+          "bytes": 18620,
+          "sha256": "84d79e38ba85ed8903b293570cdc8dec68abcfc50cfc1782fdf9728cf0e07290"
+        },
+        "zones_grid100.ring_start.i64": {
+          "bytes": 148968,
+          "sha256": "cdcf6ded037489dcebd9ebc810d53c1fea396b1b1eeae6eed21b9a2461ec57c4"
+        },
+        "zones_grid100.ring_zone.i32": {
+          "bytes": 74480,
+          "sha256": "bffce184cc3910724aacf4e06b1dfac0e54150272858cdffb884504c1cd925ed"
+        },
+        "zones_grid100.xy.f64": {
+          "bytes": 1194112,
+          "sha256": "0639ab47ff87d7839c288c4ec1fd14c3612752e6b9063176452c662940bcfc9d"
+        },
+        "zones_grid250.centroid_rc_clc100.i32": {
+          "bytes": 24560,
+          "sha256": "8cc8eb300bcf817b93718c6519b8de862953b0e5e5a553459412cf444f3a7e07"
+        },
+        "zones_grid250.centroid_rc_dem30.i32": {
+          "bytes": 24560,
+          "sha256": "4271e25a91c3f97c8d06330968aef43a2826b03a893cadc0fdef29b550f73716"
+        },
+        "zones_grid250.ids.i64": {
+          "bytes": 24560,
+          "sha256": "8f023fe26ca4cac006545c4faf68279875ca5d5e9e642fdc54cfd445d0048a44"
+        },
+        "zones_grid250.json": {
+          "bytes": 251,
+          "sha256": "f3f40898c105e150a8ad869a3314f2c723a9b47f3dc54fc6fadf3c0945a54b71"
+        },
+        "zones_grid250.ring_is_hole.u8": {
+          "bytes": 3073,
+          "sha256": "5fbf904d9c5cb6f356cb9eb1ee1d1511051088e1f08551ccbe753e4334fa6d9f"
+        },
+        "zones_grid250.ring_start.i64": {
+          "bytes": 24592,
+          "sha256": "1f90655f8477e9068c3251aa2cbcabfb27ab48d02d1d14656b0973bb72a2865f"
+        },
+        "zones_grid250.ring_zone.i32": {
+          "bytes": 12292,
+          "sha256": "3f9c05d3e1fc0b7c9e535b29b98e405fd26020edc7cc21d16d16f44d3c0d61ae"
+        },
+        "zones_grid250.xy.f64": {
+          "bytes": 198576,
+          "sha256": "2cfc2157f68d59dd9c7a4274dcef1209d1191ca4c1e6bd53252ff2490f3316a9"
+        }
+      },
+      "sources": {
+        "dem30": [
+          "GEDTM30 global ensemble DTM, 30 m, OpenGeoHub (PostGIS table dem30)",
+          "CC BY 4.0"
+        ],
+        "dem60": [
+          "GEDTM30 generalised to 60 m (PostGIS table dem60)",
+          "CC BY 4.0"
+        ],
+        "dem120": [
+          "GEDTM30 generalised to 120 m (PostGIS table dem120)",
+          "CC BY 4.0"
+        ],
+        "clc100": [
+          "CORINE Land Cover 2018 class code (code_18) rasterised at 100 m from PostGIS table landuse_clc",
+          "Copernicus Land Monitoring Service, free with attribution"
+        ],
+        "imp30": [
+          "Copernicus Imperviousness Density 2018 at 30 m (PostGIS table urban_imp30), 255 -> NoData",
+          "Copernicus Land Monitoring Service, free with attribution"
+        ],
+        "grid": [
+          "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline",
+          "CC BY 4.0"
+        ]
+      }
+    },
+    "mazovia_5000": {
+      "fixture": {
+        "id": "mazovia_5000",
+        "rasters": [
+          "dem30",
+          "dem60",
+          "dem120",
+          "clc100"
+        ],
+        "zones": [
+          "grid1000",
+          "grid500",
+          "grid250",
+          "grid100"
+        ],
+        "area_km2": 5942.6,
+        "notes": "Wkra basin (Mazovia, Poland), the 5,000 km2 scaling workload; HydroBASINS v1c level 7 HYBAS_ID 2070366020"
+      },
+      "files": {
+        "fixture.json": {
+          "bytes": 320,
+          "sha256": "50995799b942095afec8902bacfbbc3ec0e5bcd88e01ef3b5d0889be9cfde102"
+        },
+        "raster_clc100.bin": {
+          "bytes": 4210240,
+          "sha256": "041c42905183f7860b344a827baff5f8b1628cc672941a3ca5c23db858d9529a"
+        },
+        "raster_clc100.json": {
+          "bytes": 351,
+          "sha256": "ae6d963dc39314eb4f4fcf0f42c579a24aac62802f4360b79679890b5fa90f28"
+        },
+        "raster_dem120.bin": {
+          "bytes": 2925408,
+          "sha256": "d176f16ea675adb767465332d1f700f2cfa324348c59075c61e4d767bc8f4bda"
+        },
+        "raster_dem120.json": {
+          "bytes": 263,
+          "sha256": "709b5d06942fb808bb8fa26ee4250112e18a46a289236260faca8fcf727650d0"
+        },
+        "raster_dem30.bin": {
+          "bytes": 46716004,
+          "sha256": "94b0d655178506fe1dba2c9ed0828981b8131e63af20b9209376bce0aed41b0c"
+        },
+        "raster_dem30.json": {
+          "bytes": 295,
+          "sha256": "29ef8ac40e281db4354eb4b7b9d3cdd2463bf354995aa903e2982dc96f30a17f"
+        },
+        "raster_dem60.bin": {
+          "bytes": 11685904,
+          "sha256": "b52764f7ce6e3ed45907750af54ec0653a40d4cf640a132a0099bed9214b7a2a"
+        },
+        "raster_dem60.json": {
+          "bytes": 261,
+          "sha256": "d3153daf5ddd1fdc91b0cd2f2413c755bc672ecb27e4b105d713df9c33d1bdbd"
+        },
+        "zones_grid100.centroid_rc_clc100.i32": {
+          "bytes": 4774696,
+          "sha256": "5046dd5546996db7eedffc6fb80b0b2fd351324d5b7cecd260fc13b4fd4ed8c9"
+        },
+        "zones_grid100.centroid_rc_dem120.i32": {
+          "bytes": 4774696,
+          "sha256": "52b16b78bbfe053b368885f5537ab7a1cc78bd52e6bfd0e25d9721ac3c92d9c4"
+        },
+        "zones_grid100.centroid_rc_dem30.i32": {
+          "bytes": 4774696,
+          "sha256": "dad52518259bc3dd59a653c726d04b85ff2ddfc05777c482604e8d6903a2d661"
+        },
+        "zones_grid100.centroid_rc_dem60.i32": {
+          "bytes": 4774696,
+          "sha256": "8d59409360f85875481605c44daa3498bfc64f60bb16d21a60c54a478b96f52e"
+        },
+        "zones_grid100.ids.i64": {
+          "bytes": 4774696,
+          "sha256": "788f77e617c27a1a62fbff2b141d6ce8e3a888c7b25cd3b7765918b4e3cbf600"
+        },
+        "zones_grid100.json": {
+          "bytes": 257,
+          "sha256": "9ddd7559ea7ff39cd4094aa68952f29d1f084de36212ea462e9cdf93211d8df0"
+        },
+        "zones_grid100.ring_is_hole.u8": {
+          "bytes": 596840,
+          "sha256": "9f0161a1f32202d85513d8f644413a01377579ae65e8227fa5e70a959a0b9168"
+        },
+        "zones_grid100.ring_start.i64": {
+          "bytes": 4774728,
+          "sha256": "4b84abb1f18a6e1bd0d4c59627f20f0972fdc3983e745e38b989184530b8aa68"
+        },
+        "zones_grid100.ring_zone.i32": {
+          "bytes": 2387360,
+          "sha256": "15613746bb8c80e708cf2272e7a34316116e96062763bd5beba28c3972ca4be0"
+        },
+        "zones_grid100.xy.f64": {
+          "bytes": 38213456,
+          "sha256": "0f5b63863e09d772c58b17aaec02f5b15a0d664a64ba5fd40191d8fcc33a40d3"
+        },
+        "zones_grid1000.centroid_rc_clc100.i32": {
+          "bytes": 49552,
+          "sha256": "b679f61aadcbc6839a04f9f4fc11e337bf2c2380ce8bc097039cdd0b3910a249"
+        },
+        "zones_grid1000.centroid_rc_dem120.i32": {
+          "bytes": 49552,
+          "sha256": "74b663edde10d8bc636396bb3b0cc5c33967f8f69a15755f19cec6cba329f897"
+        },
+        "zones_grid1000.centroid_rc_dem30.i32": {
+          "bytes": 49552,
+          "sha256": "8ea06b50551a2f6dc0c785e04d651e88de59eccc780ce4846a14c64a8bc7881d"
+        },
+        "zones_grid1000.centroid_rc_dem60.i32": {
+          "bytes": 49552,
+          "sha256": "66aa55ccdad9cc8b32e8d7fa59c51ea3309d932d1cd5d63a739d224324f41474"
+        },
+        "zones_grid1000.ids.i64": {
+          "bytes": 49552,
+          "sha256": "a465be010663b2f6ba1b8eece7843f9f183b8d680e2b414d2e8f429ba6400395"
+        },
+        "zones_grid1000.json": {
+          "bytes": 252,
+          "sha256": "c7d5feb2b9502931824ae557ad104eea6e25caebff2bfc95852f8666eee52607"
+        },
+        "zones_grid1000.ring_is_hole.u8": {
+          "bytes": 6204,
+          "sha256": "0fab29452fea82c9791d2766c82a33560569d4a8462d7752cc72f496c81feb06"
+        },
+        "zones_grid1000.ring_start.i64": {
+          "bytes": 49640,
+          "sha256": "a9c0da2f359a134a18f8c4ca0d47627f70c3dd0c21bdf34a31b43ed811eef8b6"
+        },
+        "zones_grid1000.ring_zone.i32": {
+          "bytes": 24816,
+          "sha256": "e80e3a6e1263ebf05012b672799b39e47efa7ac427126c72a5cb6aa4669a570a"
+        },
+        "zones_grid1000.xy.f64": {
+          "bytes": 408064,
+          "sha256": "faaf9766ef6f396c16cb918bb02a8dceb1ab9281347321365c70d9f71c08d87d"
+        },
+        "zones_grid250.centroid_rc_clc100.i32": {
+          "bytes": 768848,
+          "sha256": "a3157f78a5b32df2d8b45514caef35da38e8be65adfc7b8440012ec221e393eb"
+        },
+        "zones_grid250.centroid_rc_dem120.i32": {
+          "bytes": 768848,
+          "sha256": "050b14f24eebe675f3aabe924a82dcd644db721f68860934dc9cf027ed4f9c6b"
+        },
+        "zones_grid250.centroid_rc_dem30.i32": {
+          "bytes": 768848,
+          "sha256": "de10264cdf7b0aa8d3e228a303eaa8a72362d00bb3c057f2da9def04ff1572cb"
+        },
+        "zones_grid250.centroid_rc_dem60.i32": {
+          "bytes": 768848,
+          "sha256": "b5785970008540199edbe48c1214839df43cff1101ba4a8dd7598fbce5940628"
+        },
+        "zones_grid250.ids.i64": {
+          "bytes": 768848,
+          "sha256": "170d6477c997960195f4e387305e5c485d5298c8ffaaac1f23d05c0b3282efdb"
+        },
+        "zones_grid250.json": {
+          "bytes": 254,
+          "sha256": "ea28f93b2233187bd3ceea4aa709e01d5310837b6d1b119d229ac8aedb044a77"
+        },
+        "zones_grid250.ring_is_hole.u8": {
+          "bytes": 96112,
+          "sha256": "d7938ebe8f505050440cba95e982fe1494e85e0dece4f00f68079784d461bba1"
+        },
+        "zones_grid250.ring_start.i64": {
+          "bytes": 768904,
+          "sha256": "6dc0ff9f88fcf2cab5f923c20ea562bfcfb178719694d98a4d2af652c861307a"
+        },
+        "zones_grid250.ring_zone.i32": {
+          "bytes": 384448,
+          "sha256": "c118cf107457d040526f90a6712cb65ec3b27e9ff39bf325ebe32c5871a478f6"
+        },
+        "zones_grid250.xy.f64": {
+          "bytes": 6163728,
+          "sha256": "b2816cf7ac072b35a69093c02ddc35f879c59642573061ef268752a85ad3f18c"
+        },
+        "zones_grid500.centroid_rc_clc100.i32": {
+          "bytes": 194328,
+          "sha256": "75ec023f1bf9880ed9048a0dbaeba87ac8e137a449a466f59b55be217821f039"
+        },
+        "zones_grid500.centroid_rc_dem120.i32": {
+          "bytes": 194328,
+          "sha256": "d47a856b308cb77cbf640b76c496281f2494f60533db6ac81285ca7e1f32cf06"
+        },
+        "zones_grid500.centroid_rc_dem30.i32": {
+          "bytes": 194328,
+          "sha256": "bbeffe740ff071169feea30720e0ef75eb1315634dac40673715f7da2fa0ab4b"
+        },
+        "zones_grid500.centroid_rc_dem60.i32": {
+          "bytes": 194328,
+          "sha256": "dc4d7eee33760c7814d364cd46f492fa566bab5c8b4efc83ea11f50734c5f987"
+        },
+        "zones_grid500.ids.i64": {
+          "bytes": 194328,
+          "sha256": "0553ee3bafa3e656211c7b38437ecb7fb0ab830ccfa6e0533f141ea020143b0a"
+        },
+        "zones_grid500.json": {
+          "bytes": 253,
+          "sha256": "071dee5147c7e7e22a91f9aef08a142f42184122209e29e64daf0ae252ffc4f9"
+        },
+        "zones_grid500.ring_is_hole.u8": {
+          "bytes": 24297,
+          "sha256": "0e2b80ed264f199199b3ba09d0a7725c34472eefbdf4d58e5eecaa5808884e55"
+        },
+        "zones_grid500.ring_start.i64": {
+          "bytes": 194384,
+          "sha256": "753d67a81b6febeb563bb4342ea2639d8a5e218ea6a90f6726fa912a8f5f0199"
+        },
+        "zones_grid500.ring_zone.i32": {
+          "bytes": 97188,
+          "sha256": "a4dc239363c50b02915b89cd13b64eb4d9bd75ef787c397029aa6e08cb1f9b7a"
+        },
+        "zones_grid500.xy.f64": {
+          "bytes": 1566576,
+          "sha256": "2b4c3cb23fd928c19239ccd6a492da5c4a564951a5c035cd5a38358d5b7c2ea6"
+        }
+      },
+      "sources": {
+        "dem30": [
+          "GEDTM30 global ensemble DTM, 30 m, OpenGeoHub (PostGIS table dem30)",
+          "CC BY 4.0"
+        ],
+        "dem60": [
+          "GEDTM30 generalised to 60 m (PostGIS table dem60)",
+          "CC BY 4.0"
+        ],
+        "dem120": [
+          "GEDTM30 generalised to 120 m (PostGIS table dem120)",
+          "CC BY 4.0"
+        ],
+        "clc100": [
+          "CORINE Land Cover 2018 class code (code_18) rasterised at 100 m from PostGIS table landuse_clc",
+          "Copernicus Land Monitoring Service, free with attribution"
+        ],
+        "imp30": [
+          "Copernicus Imperviousness Density 2018 at 30 m (PostGIS table urban_imp30), 255 -> NoData",
+          "Copernicus Land Monitoring Service, free with attribution"
+        ],
+        "grid": [
+          "square grid aligned to the cell size, clipped to the HydroBASINS v1c basin outline",
+          "CC BY 4.0"
+        ]
+      }
+    }
+  }
+}

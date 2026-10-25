@@ -1,0 +1,15 @@
+{
+  "dtype": "f32",
+  "width": 474,
+  "height": 925,
+  "transform": [
+    3613734.760997087,
+    2301901.447320299,
+    30.0,
+    30.0
+  ],
+  "nodata": -9999.0,
+  "crs": "EPSG:3035",
+  "source": "GEDTM30 global ensemble DTM, 30 m, OpenGeoHub (PostGIS table dem30)",
+  "licence": "CC BY 4.0"
+}
