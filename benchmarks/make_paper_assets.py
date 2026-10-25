@@ -165,10 +165,10 @@ def table_scaling_zones(points, out):
     rows = sorted(best.values(), key=lambda p: (p["fixture"], p["op"], p["raster"], p["den"], p["n_zones"],
                                                  rung_rank(p["rung"])))
     lines = ["\\begin{tabular}{lrrlrr}", "\\toprule",
-             "Workload & Zones & Cells & Rung & Threads & Median [s] \\\\", "\\midrule"]
+             "Workload & Zones & Cells & Rung & Threads & Median [ms] \\\\", "\\midrule"]
     for p in rows:
         lines.append(f"{wl_label(p)} & {p['n_zones']:,} & {p['n_cells']:,} & {p['rung']} & {p['threads_eff']} & "
-                     f"{fmt(p['median'])} \\\\")
+                     f"{fmt(p['median'] * 1000)} \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     (out / "tables" / "scaling_zones.tex").write_text("\n".join(lines) + "\n")
 
@@ -176,7 +176,7 @@ def table_scaling_zones(points, out):
 def table_speedup_threads(points, baseline, out):
     """Speedup over the baseline versus thread count, per rung, for every workload with a baseline."""
     lines = ["\\begin{tabular}{lrlrrrr}", "\\toprule",
-             "Workload & Zones & Rung & Requested & Effective & Median [s] & Speedup \\\\", "\\midrule"]
+             "Workload & Zones & Rung & Requested & Effective & Median [ms] & Speedup \\\\", "\\midrule"]
     for p in sorted(points.values(), key=lambda p: (p["fixture"], p["op"], p["raster"], p["den"], p["n_zones"],
                                                      rung_rank(p["rung"]), p["threads"])):
         b = baseline.get(workload_key(p))
@@ -184,7 +184,7 @@ def table_speedup_threads(points, baseline, out):
             continue
         sp = b["median"] / p["median"] if p["median"] > 0 else None
         lines.append(f"{wl_label(p)} & {p['n_zones']:,} & {p['rung']} & {p['threads']} & {p['threads_eff']} & "
-                     f"{fmt(p['median'])} & {fmt(sp)}$\\times$ \\\\")
+                     f"{fmt(p['median'] * 1000)} & {fmt(sp)}$\\times$ \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     (out / "tables" / "speedup_threads.tex").write_text("\n".join(lines) + "\n")
 
@@ -197,12 +197,12 @@ def table_ladder(points, baseline, out):
         if k not in best or p["median"] < best[k]["median"]:
             best[k] = p
     lines = ["\\begin{tabular}{lrlrrr}", "\\toprule",
-             "Workload & Zones & Rung & Threads & Median [s] & Speedup \\\\", "\\midrule"]
+             "Workload & Zones & Rung & Threads & Median [ms] & Speedup \\\\", "\\midrule"]
     for (w, rung), p in sorted(best.items(), key=lambda kv: (kv[1]["fixture"], kv[1]["op"], kv[1]["raster"],
                                                              kv[1]["den"], kv[1]["n_zones"], rung_rank(kv[0][1]))):
         b = baseline.get(w)
         sp = (b["median"] / p["median"]) if (b and p["median"] > 0) else None
-        lines.append(f"{wl_label(p)} & {p['n_zones']:,} & {rung} & {p['threads_eff']} & {fmt(p['median'])} & "
+        lines.append(f"{wl_label(p)} & {p['n_zones']:,} & {rung} & {p['threads_eff']} & {fmt(p['median'] * 1000)} & "
                      f"{fmt(sp)}$\\times$ \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     (out / "tables" / "ladder.tex").write_text("\n".join(lines) + "\n")

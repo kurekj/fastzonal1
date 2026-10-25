@@ -11,6 +11,7 @@
 #include <fastzonal/fastzonal.h>
 
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <string>
@@ -52,6 +53,8 @@ std::vector<Case> discover() {
     return cases;
 }
 
+std::string g_case;  // "<fixture> <zones> <raster>" of the case being checked, for the printed log
+
 void require_close(const std::vector<double>& got, const std::vector<double>& want, double rel,
                    const std::string& what) {
     REQUIRE(got.size() == want.size());
@@ -70,6 +73,9 @@ void require_close(const std::vector<double>& got, const std::vector<double>& wa
         REQUIRE(err <= tol);
     }
     INFO(what << ": worst zone " << worst << " abs error " << worst_err);
+    // always printed, so a run log records the worst error of every comparison
+    std::printf("parity %s %s: %zu zones, worst zone %zu abs error %.3e (tolerance relative %.0e)\n",
+                g_case.c_str(), what.c_str(), got.size(), worst, worst_err, rel);
     SUCCEED();
 }
 
@@ -94,6 +100,7 @@ TEST_CASE("parity with the csharp baseline") {
         const std::string fdir = kFixtureRoot + "/" + c.fixture;
         const std::string edir = kExpectedRoot + "/" + c.fixture;
         INFO(c.fixture << " " << c.zones << " x " << c.raster);
+        g_case = c.fixture + " " + c.zones + " " + c.raster;
         const fzio::Raster raster = fzio::read_raster(fdir, c.raster);
         const fzio::Zones zones = fzio::read_zones(fdir, c.zones);
         const fz_shape shape{raster.width, raster.height};
