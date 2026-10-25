@@ -59,6 +59,50 @@ def test_polygons_to_rings_matches_reference_and_roundtrips():
     assert all(np.array_equal(a, b) for a, b in zip(again, got))
 
 
+def test_input_validation_rejects_lossy_and_malformed_arrays():
+    raster = np.zeros((4, 4), dtype=np.float32)
+    good = np.zeros((4, 4), dtype=np.int32)
+    with pytest.raises(ValueError):
+        fz.zonal(raster, np.full((4, 4), 2 ** 32, dtype=np.int64), 2, nodata=-9999.0)   # would wrap to zone 0
+    with pytest.raises(TypeError):
+        fz.zonal(raster, np.full((4, 4), 0.9), 2, nodata=-9999.0)                       # would truncate to zone 0
+    with pytest.raises(ValueError):
+        fz.majority(raster.astype(np.uint8), good, 2, nodata=-9999)                      # not representable in uint8
+    with pytest.raises(ValueError):
+        fz.mean(raster, good, 2, nodata=-9999.0, stats=np.zeros(1, dtype=fz.STATS_DTYPE))  # too short
+    with pytest.raises(ValueError):
+        fz.mean(raster, good, 2, nodata=-9999.0, stats=np.zeros(2, dtype=np.float64))     # wrong dtype
+    strided = np.zeros(3, dtype=fz.STATS_DTYPE)
+    strided["sum"] = [10, 20, 30]
+    strided["count"] = 1
+    m = fz.mean(raster, good, 2, nodata=-9999.0, stats=strided[::2])
+    assert m.tolist() == [10.0, 30.0]
+    xy = np.array([0, 0, 3, 0, 3, 3], dtype=np.float64)
+    with pytest.raises(ValueError):
+        fz.rasterize(rings=(xy, [0, 3], np.empty((1, 0), np.uint8), np.empty((1, 0), np.int32)), transform=(0, 4, 1, 1),
+                     width=4, height=4)
+    with pytest.raises(ValueError):
+        fz.rasterize(rings=(xy, [0, 4], [0], [0]), transform=(0, 4, 1, 1), width=4, height=4)   # offset past xy
+    ok = fz.rasterize(rings=(xy.reshape(-1, 2), [0, 3], [0], [0]), transform=(0, 4, 1, 1), width=4, height=4)
+    assert ok.dtype == np.int32 and (ok == 0).sum() > 0
+
+
+def test_rings_to_polygons_handles_interleaved_zones_offsets_and_bad_holes():
+    sq = lambda x, y: np.array([x, y, x + 1, y, x + 1, y + 1, x, y + 1], dtype=np.float64)  # noqa: E731
+    xy = np.concatenate([np.zeros(4), sq(0, 0), sq(10, 0), sq(20, 0), sq(30, 0)])   # two leading unused points
+    rings = (xy, np.array([2, 6, 10, 14, 18]), np.zeros(4, np.uint8), np.array([1, 0, 1, 0], np.int32))
+    polys = fz.rings_to_polygons(rings, 2)
+    assert [g.geom_type for g in polys] == ["MultiPolygon", "MultiPolygon"]
+    assert polys[0].equals(box(10, 0, 11, 1).union(box(30, 0, 31, 1)))
+    assert polys[1].equals(box(0, 0, 1, 1).union(box(20, 0, 21, 1)))
+    with pytest.raises(ValueError):
+        fz.rings_to_polygons((xy, np.array([2, 6, 10, 14, 18]), np.array([0, 1, 0, 0], np.uint8),
+                              np.array([0, 1, 1, 1], np.int32)), 2)   # hole with another zone
+    with pytest.raises(ValueError):
+        fz.rings_to_polygons((xy, np.array([2, 6, 10, 14, 18]), np.array([1, 0, 0, 0], np.uint8),
+                              np.array([0, 0, 1, 1], np.int32)), 2)   # leading hole
+
+
 def test_rasterize_square_center_and_compat():
     sq = box(2, 2, 5, 5)
     m = fz.rasterize([sq], transform=(0, 10, 1, 1), width=10, height=10)

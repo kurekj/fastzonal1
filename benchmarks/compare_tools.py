@@ -6,11 +6,15 @@ Three stages are timed separately because the tools do not split the work the sa
   pipeline   shapely polygons -> per-zone mean (rasterstats, exactextract, fastzonal)
   rasterize  shapely polygons -> zone-index mask (rasterio.features.rasterize, fastzonal)
   stats      zone-index mask + raster -> per-zone mean (numpy bincount, xarray-spatial, fastzonal)
-Every row carries the wall time of the whole call (`seconds`) and of the part after input
-conversion (`compute_seconds`), plus an agreement measure against fastzonal on the same stage:
-`max_abs_diff` of the per-zone means over zones both tools filled, `n_only_a` / `n_only_b` for
-zones filled by one tool only, or `n_diff_cells` for masks. Results append to a CSV and a run is
-resumable (finished (case, tool, stage, threads) combinations are skipped).
+Every row carries the wall time of the whole call (`seconds`, from the inputs the tool takes to
+the per-zone result as a NumPy array) and of the part after input conversion (`compute_seconds`),
+plus an agreement measure of that repetition's result against the fastzonal reference (one thread)
+on the same stage: `max_abs_diff` of the per-zone means over zones both tools filled,
+`n_only_tool` / `n_only_fastzonal` for zones filled by one side only, or `n_diff_cells` for masks.
+One untimed warm-up call precedes the timed repetitions of every tool (first calls pay JIT
+compilation or cache initialisation). Results append to a CSV and a run is resumable (finished
+(case, tool, stage, threads) combinations are skipped; a stage whose tools are all done is skipped
+without recomputing the reference).
 
     python benchmarks/compare_tools.py run --fixtures /data/fastzonal/fixtures \\
         --cases biebrza_upper:grid1000:dem30,mazovia_5000:grid100:dem30 --threads 1,8,56 \\
@@ -157,18 +161,19 @@ def fastzonal_pipeline(cd: CaseData, threads: int) -> ToolResult:
     mask = fz.rasterize(rings=rings, transform=cd.transform, width=w, height=h, mode="center",
                         options=_fz_options(threads))
     stats = fz.zonal(cd.raster, mask, cd.n_zones, nodata=cd.nodata, options=_fz_options(threads))
+    means = means_from_stats(stats)
     t2 = time.perf_counter()
     cd.extras.setdefault("fz_mask", mask)
-    return ToolResult(means_from_stats(stats), t2 - t0, t2 - t1)
+    return ToolResult(means, t2 - t0, t2 - t1)
 
 
 def rasterstats_pipeline(cd: CaseData, threads: int) -> ToolResult:
     from rasterstats import zonal_stats
     t0 = time.perf_counter()
-    nodata = None if math.isnan(cd.nodata) else cd.nodata
-    rows = zonal_stats(list(cd.polygons), cd.raster, affine=_affine(cd), nodata=nodata, stats=["mean"])
-    t1 = time.perf_counter()
+    # nodata is passed as given (NaN included): with None rasterstats would substitute -999
+    rows = zonal_stats(list(cd.polygons), cd.raster, affine=_affine(cd), nodata=cd.nodata, stats=["mean"])
     out = np.array([np.nan if r["mean"] is None else float(r["mean"]) for r in rows], dtype=np.float64)
+    t1 = time.perf_counter()
     return ToolResult(out, t1 - t0, t1 - t0, "pixel-centre rule, all_touched=False")
 
 
@@ -184,9 +189,9 @@ def exactextract_pipeline(cd: CaseData, threads: int) -> ToolResult:
     src = NumPyRasterSource(cd.raster, x0, y0 - h * ph, x0 + w * pw, y0,
                             nodata=None if math.isnan(cd.nodata) else cd.nodata)
     df = exact_extract(src, feats, ["mean"], include_cols=["fid"], output="pandas")
-    t2 = time.perf_counter()
     out = np.full(cd.n_zones, np.nan, dtype=np.float64)
     out[df["fid"].to_numpy()] = df["mean"].to_numpy(dtype=np.float64)
+    t2 = time.perf_counter()
     return ToolResult(out, t2 - t0, t2 - t1, "coverage-fraction weighted mean")
 
 
@@ -225,8 +230,9 @@ def fastzonal_stats(cd: CaseData, threads: int) -> ToolResult:
     mask = _mask(cd)
     t0 = time.perf_counter()
     stats = fz.zonal(cd.raster, mask, cd.n_zones, nodata=cd.nodata, options=_fz_options(threads))
+    means = means_from_stats(stats)
     t1 = time.perf_counter()
-    return ToolResult(means_from_stats(stats), t1 - t0, t1 - t0)
+    return ToolResult(means, t1 - t0, t1 - t0)
 
 
 def numpy_stats(cd: CaseData, threads: int) -> ToolResult:
@@ -254,11 +260,11 @@ def xrspatial_stats(cd: CaseData, threads: int) -> ToolResult:
     zones = xr.DataArray(mask)
     df = zonal.stats(zones=zones, values=values, stats_funcs=["mean"],
                      nodata_values=None if math.isnan(cd.nodata) else cd.nodata)
-    t1 = time.perf_counter()
     out = np.full(cd.n_zones, np.nan, dtype=np.float64)
     zid = df["zone"].to_numpy().astype(np.int64)
     keep = zid >= 0
     out[zid[keep]] = df["mean"].to_numpy(dtype=np.float64)[keep]
+    t1 = time.perf_counter()
     return ToolResult(out, t1 - t0, t1 - t0, "xrspatial.zonal.stats on the fastzonal mask")
 
 
@@ -291,42 +297,45 @@ def append_rows(path: Path, rows: List[dict]) -> None:
             w.writerow({c: r.get(c, "") for c in COLUMNS})
 
 
+def agreement(stage: str, value, reference) -> dict:
+    return compare_masks(value, reference) if stage == "rasterize" else compare_means(value, reference)
+
+
 def run_case(cd: CaseData, stages: Dict[str, Dict[str, Callable]], threads: Sequence[int], reps: int,
              max_seconds: float, out: Path, done: set, log=print) -> None:
     c = cd.case
     n_cells = int(cd.raster.size)
     for stage, tools in stages.items():
-        # fastzonal first: it provides the reference for the agreement columns
-        reference: Dict[int, ToolResult] = {}
-        for tool in ["fastzonal"] + [t for t in tools if t != "fastzonal"]:
-            if tool not in tools:
+        plan = [(tool, t) for tool in ["fastzonal"] + [u for u in tools if u != "fastzonal"] if tool in tools
+                for t in (threads if tool == "fastzonal" else [1])]
+        if all((c.fixture, c.zones, c.raster, stage, tool, t) in done for tool, t in plan):
+            continue
+        # the one-thread fastzonal result is the reference every repetition is compared with; it is
+        # recomputed (untimed) when the stage resumes with the reference rows already written
+        reference = None
+        if "fastzonal" in tools and (c.fixture, c.zones, c.raster, stage, "fastzonal", 1) in done:
+            reference = tools["fastzonal"](cd, 1).value
+        for tool, t in plan:
+            key = (c.fixture, c.zones, c.raster, stage, tool, t)
+            if key in done:
                 continue
-            for t in (threads if tool == "fastzonal" else [1]):
-                key = (c.fixture, c.zones, c.raster, stage, tool, t)
-                if key in done and not (tool == "fastzonal" and t not in reference):
-                    continue
-                results = []
-                for rep in range(reps):
-                    r = tools[tool](cd, t)
-                    results.append(r)
-                    log(f"{c.key} {stage:9s} {tool:12s} t={t:<3d} rep {rep}: {r.seconds:.4f} s (compute {r.compute_seconds:.4f})")
-                    if r.seconds > max_seconds:
-                        break
-                if tool == "fastzonal":
-                    reference[t] = results[0]
-                if key in done:
-                    continue
-                ref = reference.get(1, next(iter(reference.values()), None))
-                if stage == "rasterize":
-                    agree = compare_masks(results[0].value, ref.value) if tool != "fastzonal" else {"n_diff_cells": 0}
-                else:
-                    agree = compare_means(results[0].value, ref.value) if tool != "fastzonal" else compare_means(results[0].value, ref.value)
-                rows = [dict(fixture=c.fixture, zones=c.zones, raster=c.raster, n_zones=cd.n_zones, n_cells=n_cells,
-                             stage=stage, tool=tool, threads=t, rep=i, seconds=f"{r.seconds:.6f}",
-                             compute_seconds=f"{r.compute_seconds:.6f}", note=r.note, **agree)
-                        for i, r in enumerate(results)]
-                append_rows(out, rows)
-                done.add(key)
+            tools[tool](cd, t)  # warm-up, untimed
+            results = []
+            for rep in range(reps):
+                r = tools[tool](cd, t)
+                results.append(r)
+                log(f"{c.key} {stage:9s} {tool:12s} t={t:<3d} rep {rep}: {r.seconds:.4f} s (compute {r.compute_seconds:.4f})")
+                if r.seconds > max_seconds:
+                    break
+            if reference is None:
+                reference = results[0].value
+            rows = [dict(fixture=c.fixture, zones=c.zones, raster=c.raster, n_zones=cd.n_zones, n_cells=n_cells,
+                         stage=stage, tool=tool, threads=t, rep=i, seconds=f"{r.seconds:.6f}",
+                         compute_seconds=f"{r.compute_seconds:.6f}", note=r.note,
+                         **agreement(stage, r.value, reference))
+                    for i, r in enumerate(results)]
+            append_rows(out, rows)
+            done.add(key)
 
 
 def write_env(path: Path, args) -> None:
@@ -419,9 +428,13 @@ def summarise(rows: List[dict]) -> dict:
                "median_seconds": statistics.median(float(r["seconds"]) for r in rs),
                "median_compute_seconds": statistics.median(float(r["compute_seconds"]) for r in rs),
                "note": rs[0]["note"]}
-        for c in ("max_abs_diff", "n_compared", "n_only_tool", "n_only_fastzonal", "n_diff_cells"):
-            v = rs[0].get(c, "")
-            rec[c] = (float(v) if c == "max_abs_diff" else int(v)) if v not in ("", None) else None
+        # the worst agreement over the repetitions (a later repetition may differ from the first)
+        for c in ("max_abs_diff", "n_only_tool", "n_only_fastzonal", "n_diff_cells"):
+            vals = [r.get(c, "") for r in rs]
+            vals = [float(v) if c == "max_abs_diff" else int(v) for v in vals if v not in ("", None)]
+            rec[c] = max(vals) if vals else None
+        vals = [int(r["n_compared"]) for r in rs if r.get("n_compared", "") not in ("", None)]
+        rec["n_compared"] = min(vals) if vals else None
         out.append(rec)
     return {"groups": out}
 
@@ -438,43 +451,52 @@ def _fmt_s(x: Optional[float]) -> str:
     return f"{x:.3f}"
 
 
+def _tex(text: str) -> str:
+    return "".join("\\" + ch if ch in "&%$#_{}" else ch for ch in str(text))
+
+
 def write_tables(summary: dict, out_dir: Path, fast_threads: int) -> None:
+    """Two tables of total wall time (seconds) per call: polygons to means, and the rasterise and
+    stats stages. All columns are `median_seconds` (whole call, input conversion included)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     g = {(r["fixture"], r["zones"], r["raster"], r["stage"], r["tool"], r["threads"]): r for r in summary["groups"]}
     cases = sorted({(r["fixture"], r["zones"], r["raster"], r["n_zones"]) for r in summary["groups"]},
-                   key=lambda c: (c[0], c[3]))
+                   key=lambda c: (c[0], c[2], c[3]))
 
-    def sec(fixture, zones, raster, stage, tool, threads, compute=False):
+    def sec(fixture, zones, raster, stage, tool, threads):
         r = g.get((fixture, zones, raster, stage, tool, threads))
-        return None if r is None else r["median_compute_seconds" if compute else "median_seconds"]
+        return None if r is None else r["median_seconds"]
 
     def speed(a, b):
         return "--" if a is None or b is None or b == 0 else f"{a / b:.1f}"
 
-    lines = [r"\begin{tabular}{llrrrrrrr}", r"\toprule",
-             r"Fixture & Zones & $n_z$ & rasterstats & exactextract & fastzonal (1) & fastzonal (%d) & $\times$ vs rasterstats & $\times$ vs exactextract \\" % fast_threads,
+    def label(fixture, zones, raster, nz):
+        return f"{_tex(fixture.replace('_', ' '))} & {_tex(zones)} & {_tex(raster)} & {nz:,}"
+
+    lines = [r"\begin{tabular}{lllrrrrrrr}", r"\toprule",
+             r"Fixture & Zones & Raster & $n_z$ & rasterstats & exactextract & fastzonal (1) & fastzonal (%d) & $\times$ vs rasterstats & $\times$ vs exactextract \\" % fast_threads,
              r"\midrule"]
     for fixture, zones, raster, nz in cases:
         rs = sec(fixture, zones, raster, "pipeline", "rasterstats", 1)
         ee = sec(fixture, zones, raster, "pipeline", "exactextract", 1)
         f1 = sec(fixture, zones, raster, "pipeline", "fastzonal", 1)
         ft = sec(fixture, zones, raster, "pipeline", "fastzonal", fast_threads)
-        lines.append(f"{fixture.replace('_', ' ')} & {zones} & {nz:,} & {_fmt_s(rs)} & {_fmt_s(ee)} & {_fmt_s(f1)} & {_fmt_s(ft)} & {speed(rs, ft)} & {speed(ee, ft)} \\\\")
+        lines.append(f"{label(fixture, zones, raster, nz)} & {_fmt_s(rs)} & {_fmt_s(ee)} & {_fmt_s(f1)} & {_fmt_s(ft)} & {speed(rs, ft)} & {speed(ee, ft)} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     (out_dir / "tools_pipeline.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    lines = [r"\begin{tabular}{llrrrrrrrr}", r"\toprule",
-             r"Fixture & Zones & $n_z$ & GDAL rasterize & fastzonal rasterize (1) & fastzonal rasterize (%d) & NumPy stats & xarray-spatial stats & fastzonal stats (1) & fastzonal stats (%d) \\" % (fast_threads, fast_threads),
+    lines = [r"\begin{tabular}{lllrrrrrrrr}", r"\toprule",
+             r"Fixture & Zones & Raster & $n_z$ & GDAL rasterize & fastzonal rasterize (1) & fastzonal rasterize (%d) & NumPy stats & xarray-spatial stats & fastzonal stats (1) & fastzonal stats (%d) \\" % (fast_threads, fast_threads),
              r"\midrule"]
     for fixture, zones, raster, nz in cases:
-        vals = [sec(fixture, zones, raster, "rasterize", "gdal", 1, True),
-                sec(fixture, zones, raster, "rasterize", "fastzonal", 1, True),
-                sec(fixture, zones, raster, "rasterize", "fastzonal", fast_threads, True),
+        vals = [sec(fixture, zones, raster, "rasterize", "gdal", 1),
+                sec(fixture, zones, raster, "rasterize", "fastzonal", 1),
+                sec(fixture, zones, raster, "rasterize", "fastzonal", fast_threads),
                 sec(fixture, zones, raster, "stats", "numpy", 1),
                 sec(fixture, zones, raster, "stats", "xrspatial", 1),
                 sec(fixture, zones, raster, "stats", "fastzonal", 1),
                 sec(fixture, zones, raster, "stats", "fastzonal", fast_threads)]
-        lines.append(f"{fixture.replace('_', ' ')} & {zones} & {nz:,} & " + " & ".join(_fmt_s(v) for v in vals) + r" \\")
+        lines.append(f"{label(fixture, zones, raster, nz)} & " + " & ".join(_fmt_s(v) for v in vals) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     (out_dir / "tools_stages.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
 

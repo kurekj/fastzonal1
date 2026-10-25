@@ -81,9 +81,12 @@ _lib = _load()
 
 _P = ctypes.POINTER
 _lib.fz_version.restype = ctypes.c_char_p
+_lib.fz_version.argtypes = []
 _lib.fz_has_openmp.restype = ctypes.c_int
+_lib.fz_has_openmp.argtypes = []
 _lib.fz_error_string.restype = ctypes.c_char_p
 _lib.fz_error_string.argtypes = [ctypes.c_int]
+_lib.fz_options_default.restype = None
 _lib.fz_options_default.argtypes = [_P(_Options)]
 _lib.fz_rasterize.restype = ctypes.c_int
 _lib.fz_rasterize.argtypes = [_P(ctypes.c_double), _P(ctypes.c_int64), _P(ctypes.c_uint8), _P(ctypes.c_int32),
@@ -151,8 +154,34 @@ def _raster(raster, name="raster"):
     return arr
 
 
+def _as_int(values, dtype, name):
+    """Lossless conversion to an integer dtype: fractional values and values outside the
+    target range are errors, never silently wrapped or truncated."""
+    arr = np.asarray(values)
+    if arr.dtype == dtype:
+        return np.ascontiguousarray(arr)
+    if not np.issubdtype(arr.dtype, np.integer):
+        if not np.issubdtype(arr.dtype, np.floating) or (arr.size and not np.all(np.isfinite(arr) & (arr == np.trunc(arr)))):
+            raise TypeError(f"{name} must hold integers")
+    info = np.iinfo(dtype)
+    if arr.size and (arr.min() < info.min or arr.max() > info.max):
+        raise ValueError(f"{name} has values outside the range of {np.dtype(dtype).name}")
+    return np.ascontiguousarray(arr, dtype=dtype)
+
+
+def _scalar_nodata(nodata, dtype):
+    """nodata typed like the raster; an integer sentinel outside the raster's range is an error."""
+    if np.issubdtype(dtype, np.integer):
+        info = np.iinfo(dtype)
+        v = int(nodata)
+        if v != nodata or v < info.min or v > info.max:
+            raise ValueError(f"nodata {nodata!r} is not representable in {np.dtype(dtype).name}")
+        return v
+    return float(nodata)
+
+
 def _mask(mask, shape):
-    m = np.ascontiguousarray(mask, dtype=np.int32)
+    m = _as_int(mask, np.int32, "mask")
     if m.shape != shape:
         raise ValueError("mask must have the raster's shape")
     return m
@@ -161,11 +190,18 @@ def _mask(mask, shape):
 def _centroids(centroids, n_zones):
     if centroids is None:
         return None, None
-    rows = np.ascontiguousarray(centroids[0], dtype=np.int32)
-    cols = np.ascontiguousarray(centroids[1], dtype=np.int32)
+    rows = _as_int(centroids[0], np.int32, "centroid rows")
+    cols = _as_int(centroids[1], np.int32, "centroid cols")
     if rows.shape != (n_zones,) or cols.shape != (n_zones,):
         raise ValueError("centroid rows and cols must have n_zones entries")
     return rows, cols
+
+
+def _stats_array(stats, n_zones):
+    arr = np.asarray(stats)
+    if arr.dtype != STATS_DTYPE or arr.shape != (n_zones,):
+        raise ValueError("stats must be a STATS_DTYPE array with n_zones entries")
+    return np.ascontiguousarray(arr)
 
 
 def polygons_to_rings(polygons: Sequence) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -202,30 +238,62 @@ def rings_to_polygons(rings, n_zones: int) -> np.ndarray:
     """Inverse of polygons_to_rings: an object array of n_zones shapely Polygons/MultiPolygons
     (an empty polygon for a zone without rings)."""
     import shapely
-    xy, ring_start, is_hole, ring_zone = (np.asarray(rings[0], dtype=np.float64), np.asarray(rings[1], dtype=np.int64),
-                                          np.asarray(rings[2]).astype(bool), np.asarray(rings[3], dtype=np.int64))
+    xy, ring_start, is_hole, ring_zone = _ring_arrays(rings)
     out = np.empty(n_zones, dtype=object)
     out[:] = [shapely.Polygon()] * n_zones
     n_rings = len(ring_zone)
     if n_rings == 0:
         return out
-    counts = np.diff(ring_start)
-    coord_ring = np.repeat(np.arange(n_rings), counts)
-    lin = shapely.linearrings(xy.reshape(-1, 2), indices=coord_ring)
-    part_of_ring = np.cumsum(~is_hole) - 1
-    polys = shapely.polygons(lin, indices=part_of_ring)
-    part_zone = ring_zone[~is_hole]
-    if part_zone.min() < 0 or part_zone.max() >= n_zones:
+    if is_hole[0]:
+        raise ValueError("the first ring cannot be a hole")
+    exterior_of_ring = np.maximum.accumulate(np.where(is_hole == 0, np.arange(n_rings), 0))
+    if np.any(ring_zone[exterior_of_ring] != ring_zone):
+        raise ValueError("a hole must carry the zone of its exterior ring")
+    if ring_zone.min() < 0 or ring_zone.max() >= n_zones:
         raise ValueError("ring_zone must lie in [0, n_zones)")
+    counts = np.diff(ring_start)
+    coords = xy.reshape(-1, 2)[ring_start[0]:ring_start[-1]]
+    coord_ring = np.repeat(np.arange(n_rings), counts)
+    lin = shapely.linearrings(coords, indices=coord_ring)
+    part_of_ring = np.cumsum(is_hole == 0) - 1
+    polys = shapely.polygons(lin, indices=part_of_ring)
+    part_zone = ring_zone[is_hole == 0]
+    # single-part zones keep a Polygon, multi-part zones become a MultiPolygon; shapely wants the
+    # collection indices sorted, so multi-part polygons are ordered by zone first (stable)
     multi = np.bincount(part_zone, minlength=n_zones) > 1
-    # single-part zones keep a Polygon, multi-part zones become a MultiPolygon
     single = ~multi[part_zone]
     out[part_zone[single]] = polys[single]
     if multi.any():
-        sel = multi[part_zone]
-        packed = shapely.multipolygons(polys[sel], indices=np.unique(part_zone[sel], return_inverse=True)[1])
-        out[np.unique(part_zone[sel])] = packed
+        sel = np.flatnonzero(multi[part_zone])
+        order = sel[np.argsort(part_zone[sel], kind="stable")]
+        zones_sorted, inverse = np.unique(part_zone[order], return_inverse=True)
+        out[zones_sorted] = shapely.multipolygons(polys[order], indices=inverse)
     return out
+
+
+def _ring_arrays(rings):
+    """The four ring arrays as flat, contiguous, validated arrays (xy float64 as a flat x0 y0 x1 y1
+    sequence or an (n, 2) array; ring_start int64 with n_rings + 1 entries; ring_is_hole uint8 and
+    ring_zone int32 with n_rings entries; offsets non-decreasing and inside xy)."""
+    xy = np.asarray(rings[0], dtype=np.float64)
+    if xy.ndim == 2 and xy.shape[1] == 2:
+        xy = xy.reshape(-1)
+    elif xy.ndim != 1 or xy.size % 2:
+        raise ValueError("xy must be a flat x0 y0 x1 y1 ... array or an (n, 2) array")
+    xy = np.ascontiguousarray(xy)
+    rs = _as_int(rings[1], np.int64, "ring_start")
+    hole = _as_int(rings[2], np.uint8, "ring_is_hole")
+    zone = _as_int(rings[3], np.int32, "ring_zone")
+    if rs.ndim != 1 or hole.ndim != 1 or zone.ndim != 1:
+        raise ValueError("ring_start, ring_is_hole and ring_zone must be one-dimensional")
+    n_rings = zone.size
+    if rs.size != n_rings + 1 or hole.size != n_rings:
+        raise ValueError("ring_start must have n_rings + 1 entries and ring_is_hole n_rings entries")
+    if n_rings and (rs[0] < 0 or np.any(np.diff(rs) < 0) or rs[-1] * 2 > xy.size):
+        raise ValueError("ring offsets must be non-decreasing and inside the coordinate array")
+    if np.any(hole > 1):
+        raise ValueError("ring_is_hole must be 0 or 1")
+    return xy, rs, hole, zone
 
 
 def rasterize(polygons=None, *, transform, width: int, height: int, mode: str = "center", rings=None,
@@ -237,13 +305,9 @@ def rasterize(polygons=None, *, transform, width: int, height: int, mode: str = 
         if polygons is None:
             raise ValueError("give polygons or rings")
         rings = polygons_to_rings(polygons)
-    xy, rs, hole, zone = (np.ascontiguousarray(rings[0], dtype=np.float64), np.ascontiguousarray(rings[1], dtype=np.int64),
-                          np.ascontiguousarray(rings[2], dtype=np.uint8), np.ascontiguousarray(rings[3], dtype=np.int32))
-    n_rings = len(zone)
-    if len(rs) != n_rings + 1 or len(hole) != n_rings:
-        raise ValueError("ring_start must have n_rings + 1 entries and ring_is_hole n_rings entries")
-    if n_rings and (rs[0] < 0 or np.any(np.diff(rs) < 0) or rs[-1] * 2 > xy.size):
-        raise ValueError("ring offsets must be non-decreasing and inside the coordinate array")
+    xy, rs, hole, zone = _ring_arrays(rings)
+    n_rings = zone.size
+    width, height = int(width), int(height)
     if width <= 0 or height <= 0:
         raise ValueError("width and height must be positive")
     opt = (options or Options(mode=mode))._native()
@@ -269,7 +333,7 @@ def zonal(raster, mask, n_zones: int, nodata, options: Optional[Options] = None)
     opt = (options or Options())._native()
     f = getattr(_lib, f"fz_zonal_{suffix}")
     _check(f(arr.ctypes.data_as(_P(ctype)), m.ctypes.data_as(_P(ctypes.c_int32)), _Shape(arr.shape[1], arr.shape[0]),
-             n_zones, ctype(nodata), out.ctypes.data, ctypes.byref(opt)))
+             n_zones, ctype(_scalar_nodata(nodata, arr.dtype)), out.ctypes.data, ctypes.byref(opt)))
     return out
 
 
@@ -278,13 +342,15 @@ def mean(raster, mask, n_zones: int, nodata, centroids=None, options: Optional[O
     """Mean per zone with the reference fallback: an empty zone takes the raster value at its
     centroid cell (`centroids` = (rows, cols)) or 0."""
     arr = _raster(raster)
-    if stats is None:
-        stats = zonal(arr, mask, n_zones, nodata, options)
+    if n_zones <= 0:
+        raise ValueError("n_zones must be positive")
+    stats = zonal(arr, mask, n_zones, nodata, options) if stats is None else _stats_array(stats, n_zones)
     suffix, ctype = _SUFFIX[arr.dtype]
     rows, cols = _centroids(centroids, n_zones)
     out = np.zeros(n_zones, dtype=np.float64)
     g = getattr(_lib, f"fz_zonal_mean_fallback_{suffix}")
-    _check(g(arr.ctypes.data_as(_P(ctype)), _Shape(arr.shape[1], arr.shape[0]), ctype(nodata), stats.ctypes.data,
+    _check(g(arr.ctypes.data_as(_P(ctype)), _Shape(arr.shape[1], arr.shape[0]), ctype(_scalar_nodata(nodata, arr.dtype)),
+             stats.ctypes.data,
              n_zones, None if rows is None else rows.ctypes.data_as(_P(ctypes.c_int32)),
              None if cols is None else cols.ctypes.data_as(_P(ctypes.c_int32)), out.ctypes.data_as(_P(ctypes.c_double))))
     return out
@@ -304,7 +370,7 @@ def majority(raster, mask, n_zones: int, nodata, centroids=None, options: Option
     opt = (options or Options())._native()
     f = getattr(_lib, f"fz_zonal_majority_{suffix}")
     _check(f(arr.ctypes.data_as(_P(ctype)), m.ctypes.data_as(_P(ctypes.c_int32)), _Shape(arr.shape[1], arr.shape[0]),
-             n_zones, ctype(nodata), None if rows is None else rows.ctypes.data_as(_P(ctypes.c_int32)),
+             n_zones, ctype(_scalar_nodata(nodata, arr.dtype)), None if rows is None else rows.ctypes.data_as(_P(ctypes.c_int32)),
              None if cols is None else cols.ctypes.data_as(_P(ctypes.c_int32)),
              value.ctypes.data_as(_P(ctypes.c_double)), has.ctypes.data_as(_P(ctypes.c_uint8)), ctypes.byref(opt)))
     return (value, has.astype(bool)) if return_has_value else value
@@ -326,6 +392,7 @@ def ratio(num, den, mask, n_zones: int, nodata_num, nodata_den, eps: float = 1e-
     opt = (options or Options())._native()
     f = getattr(_lib, f"fz_zonal_ratio_{suffix}")
     _check(f(a.ctypes.data_as(_P(ctype)), b.ctypes.data_as(_P(ctype)), m.ctypes.data_as(_P(ctypes.c_int32)),
-             _Shape(a.shape[1], a.shape[0]), n_zones, ctype(nodata_num), ctype(nodata_den), float(eps), out.ctypes.data,
+             _Shape(a.shape[1], a.shape[0]), n_zones, ctype(float(nodata_num)), ctype(float(nodata_den)), float(eps),
+             out.ctypes.data,
              ctypes.byref(opt)))
     return out
