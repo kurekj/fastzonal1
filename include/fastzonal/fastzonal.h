@@ -62,9 +62,16 @@ typedef enum fz_raster_mode {
     FZ_RASTER_COMPAT = 1  /* reproduces the SpongeGIS reference rule, exterior rings only */
 } fz_raster_mode;
 
+/* Work is split into horizontal bands of band_rows rows; bands are computed independently and
+ * merged in ascending order, so for a given band_rows the result does not depend on the backend
+ * or the thread count (changing band_rows changes the floating-point summation order).
+ * Memory for a reduction: each worker thread holds one dense array of n_zones fz_stats (40 bytes
+ * per zone) plus sparse per-band partials of the zones each band touches; the number of workers
+ * is never more than the number of bands. With 1e6 zones and 112 threads that is about 4.5 GB
+ * of scratch; reduce threads or raise band_rows when memory is tight. */
 typedef struct fz_options {
     int backend;     /* fz_backend; AUTO picks OpenMP when built with it, else serial */
-    int threads;     /* 0 = all hardware threads */
+    int threads;     /* 0 = all hardware threads; capped by the number of bands */
     int device;      /* CUDA device index */
     int raster_mode; /* fz_raster_mode */
     int band_rows;   /* rows per band; the band split fixes the summation order */
@@ -138,7 +145,8 @@ FZ_API int fz_zonal_f64(const double* raster, const int32_t* mask, fz_shape s, i
 
 /* Mean per zone with the reference fallback: sum / count when count > 0; otherwise the raster value at
  * (centroid_row[z], centroid_col[z]) when that cell is inside the raster and not NoData; otherwise 0.0.
- * centroid_row / centroid_col may both be NULL, in which case empty zones get 0.0. */
+ * centroid_row and centroid_col are either both given or both NULL (then empty zones get 0.0); giving only
+ * one is FZ_ERR_ARG. */
 FZ_API int fz_zonal_mean_fallback_f32(const float* raster, fz_shape s, float nodata, const fz_stats* stats,
                                       int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
                                       double* mean_out);
@@ -147,8 +155,9 @@ FZ_API int fz_zonal_mean_fallback_f64(const double* raster, fz_shape s, double n
                                       double* mean_out);
 
 /* Most frequent value per zone (ties resolve to the smallest value). NoData and NaN cells are skipped.
- * A zone without cells takes the value at its centroid cell when centroid arrays are given and the cell is
- * inside the raster and not NoData; otherwise value_out[z] = 0 and has_value_out[z] = 0. */
+ * A zone without cells takes the value at its centroid cell when centroid arrays are given (both or neither,
+ * as above) and the cell is inside the raster and not NoData; otherwise value_out[z] = 0 and
+ * has_value_out[z] = 0. */
 FZ_API int fz_zonal_majority_f32(const float* raster, const int32_t* mask, fz_shape s, int32_t n_zones, float nodata,
                                  const int32_t* centroid_row, const int32_t* centroid_col, double* value_out,
                                  uint8_t* has_value_out, const fz_options* opt);
@@ -160,7 +169,8 @@ FZ_API int fz_zonal_majority_i32(const int32_t* raster, const int32_t* mask, fz_
                                  double* value_out, uint8_t* has_value_out, const fz_options* opt);
 
 /* Statistics of the cell-wise ratio num / den of two rasters on the same grid. Cells where either raster is
- * NoData or NaN, or where |den| < eps, are excluded. out as in fz_zonal_*. */
+ * NoData or NaN, or where |den| < eps, are excluded; eps must be finite and positive (the reference uses
+ * 1e-12), so a zero denominator is never divided. out as in fz_zonal_*. */
 FZ_API int fz_zonal_ratio_f32(const float* num, const float* den, const int32_t* mask, fz_shape s, int32_t n_zones,
                               float nodata_num, float nodata_den, double eps, fz_stats* out, const fz_options* opt);
 FZ_API int fz_zonal_ratio_f64(const double* num, const double* den, const int32_t* mask, fz_shape s,

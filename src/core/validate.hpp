@@ -29,4 +29,12 @@ inline int validate_shape(fz_shape s) {
 
 inline size_t pixel_count(fz_shape s) { return static_cast<size_t>(s.width) * static_cast<size_t>(s.height); }
 
+// Positive zone count whose per-zone arrays (fz_stats, hash maps, slots) fit the address space.
+inline int validate_zones(int32_t n_zones) {
+    if (n_zones <= 0) return FZ_ERR_ARG;
+    constexpr uint64_t kBytesPerZone = 128;  // upper bound over every per-zone structure used
+    if (static_cast<uint64_t>(n_zones) > std::numeric_limits<size_t>::max() / kBytesPerZone) return FZ_ERR_ARG;
+    return FZ_OK;
+}
+
 }  // namespace fz

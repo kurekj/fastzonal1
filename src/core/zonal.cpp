@@ -22,7 +22,8 @@ int validate_zonal_args(const void* raster, const int32_t* mask, fz_shape s, int
     if (raster == nullptr || mask == nullptr || out == nullptr) return FZ_ERR_ARG;
     int rc = validate_shape(s);
     if (rc != FZ_OK) return rc;
-    if (n_zones <= 0) return FZ_ERR_ARG;
+    rc = validate_zones(n_zones);
+    if (rc != FZ_OK) return rc;
     if (opt != nullptr) {
         rc = validate_options(opt);
         if (rc != FZ_OK) return rc;
@@ -147,7 +148,7 @@ int ratio_impl(const T* num, const T* den, const int32_t* mask, fz_shape s, int3
     if (opt == nullptr) opt = &defaults;
     int rc = validate_zonal_args(num, mask, s, n_zones, out, opt);
     if (rc != FZ_OK) return rc;
-    if (den == nullptr || !(eps >= 0.0)) return FZ_ERR_ARG;
+    if (den == nullptr || !(eps > 0.0) || eps > std::numeric_limits<double>::max()) return FZ_ERR_ARG;
     Plan plan;
     rc = resolve_plan(opt, s, plan);
     if (rc != FZ_OK) return rc;
@@ -171,7 +172,9 @@ int mean_fallback_impl(const T* raster, fz_shape s, T nodata, const fz_stats* st
     if (raster == nullptr || stats == nullptr || mean_out == nullptr) return FZ_ERR_ARG;
     int rc = validate_shape(s);
     if (rc != FZ_OK) return rc;
-    if (n_zones <= 0) return FZ_ERR_ARG;
+    rc = validate_zones(n_zones);
+    if (rc != FZ_OK) return rc;
+    if ((centroid_row == nullptr) != (centroid_col == nullptr)) return FZ_ERR_ARG;
     for (int32_t z = 0; z < n_zones; ++z) {
         if (stats[z].count > 0) {
             mean_out[z] = stats[z].sum / static_cast<double>(stats[z].count);
@@ -205,6 +208,7 @@ int majority_impl(const T* raster, const int32_t* mask, fz_shape s, int32_t n_zo
     int rc = validate_zonal_args(raster, mask, s, n_zones, value_out, opt);
     if (rc != FZ_OK) return rc;
     if (has_value_out == nullptr) return FZ_ERR_ARG;
+    if ((centroid_row == nullptr) != (centroid_col == nullptr)) return FZ_ERR_ARG;
     Plan plan;
     rc = resolve_plan(opt, s, plan);
     if (rc != FZ_OK) return rc;

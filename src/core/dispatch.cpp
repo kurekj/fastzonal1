@@ -28,10 +28,12 @@ int resolve_plan(const fz_options* opt, fz_shape s, Plan& plan) {
 #endif
         if (threads < 1) threads = 1;
     }
+    const int64_t n_bands = (static_cast<int64_t>(s.height) + opt->band_rows - 1) / opt->band_rows;
+    // More workers than bands would only cost scratch memory (one dense per-zone array each).
+    if (threads > n_bands) threads = static_cast<int>(n_bands);
     plan.backend = backend;
     plan.threads = threads;
     plan.band_rows = opt->band_rows;
-    const int64_t n_bands = (static_cast<int64_t>(s.height) + opt->band_rows - 1) / opt->band_rows;
     plan.n_bands = static_cast<int32_t>(n_bands);
     return FZ_OK;
 }

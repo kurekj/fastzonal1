@@ -274,3 +274,70 @@ TEST_CASE("f64 matches f32 for exact values") {
     REQUIRE(ra[0].count == rb[0].count);
     REQUIRE(ra[0].sum == rb[0].sum);
 }
+
+// ---- cases added after the independent review of the reductions ----
+
+TEST_CASE("mismatched centroid pointers are rejected before output") {
+    std::vector<float> r(16, 1.0f);
+    auto mask = mask_two_zones();
+    std::vector<fz_stats> st(2);
+    auto o = serial();
+    REQUIRE(fz_zonal_f32(r.data(), mask.data(), kShape, 2, kNoData, st.data(), &o) == FZ_OK);
+    std::vector<int32_t> crow{0, 0};
+    std::vector<double> mean(2, -5.0);
+    REQUIRE(fz_zonal_mean_fallback_f32(r.data(), kShape, kNoData, st.data(), 2, crow.data(), nullptr, mean.data()) ==
+            FZ_ERR_ARG);
+    REQUIRE(mean[0] == -5.0);
+    std::vector<double> val(2, -5.0);
+    std::vector<uint8_t> has(2, 7);
+    REQUIRE(fz_zonal_majority_f32(r.data(), mask.data(), kShape, 2, kNoData, nullptr, crow.data(), val.data(),
+                                  has.data(), &o) == FZ_ERR_ARG);
+    REQUIRE(val[0] == -5.0);
+    REQUIRE(has[0] == 7);
+}
+
+TEST_CASE("ratio eps boundaries") {
+    std::vector<float> num(16, 1.0f);
+    std::vector<float> den{1e-3f, -1e-3f, 0.015625f, -0.015625f,
+                           0.5f, 0.5f, 0.5f, 0.5f,
+                           1, 1, 1, 1,
+                           1, 1, 1, 1};
+    auto mask = mask_two_zones();
+    std::vector<fz_stats> out(2);
+    auto o = serial();
+    // eps = 2^-6 (exact in float): |den| < eps excludes the two 1e-3 cells, keeps the two cells exactly at eps
+    const double eps = 0.015625;
+    REQUIRE(fz_zonal_ratio_f32(num.data(), den.data(), mask.data(), kShape, 2, kNoData, kNoData, eps, out.data(),
+                               &o) == FZ_OK);
+    REQUIRE(out[0].count == 6);
+    REQUIRE(out[0].min == -64.0);
+    REQUIRE(out[0].max == 64.0);
+    REQUIRE(fz_zonal_ratio_f32(num.data(), den.data(), mask.data(), kShape, 2, kNoData, kNoData, -1.0, out.data(),
+                               &o) == FZ_ERR_ARG);
+    REQUIRE(fz_zonal_ratio_f32(num.data(), den.data(), mask.data(), kShape, 2, kNoData, kNoData,
+                               std::numeric_limits<double>::quiet_NaN(), out.data(), &o) == FZ_ERR_ARG);
+}
+
+TEST_CASE("invalid mask leaves every output untouched") {
+    std::vector<float> r(16, 1.0f);
+    auto mask = mask_two_zones();
+    mask[9] = 2;
+    fz_options o;
+    fz_options_default(&o);
+    o.band_rows = 1;
+    std::vector<fz_stats> st(2, fz_stats{-7, -7.0, -7.0, -7.0, -7.0});
+    REQUIRE(fz_zonal_f32(r.data(), mask.data(), kShape, 2, kNoData, st.data(), &o) == FZ_ERR_ARG);
+    REQUIRE(fz_zonal_ratio_f32(r.data(), r.data(), mask.data(), kShape, 2, kNoData, kNoData, 1e-12, st.data(), &o) ==
+            FZ_ERR_ARG);
+    for (const auto& s : st) {
+        REQUIRE(s.count == -7);
+        REQUIRE(s.sum == -7.0);
+        REQUIRE(s.min == -7.0);
+    }
+    std::vector<double> val(2, -5.0);
+    std::vector<uint8_t> has(2, 7);
+    REQUIRE(fz_zonal_majority_f32(r.data(), mask.data(), kShape, 2, kNoData, nullptr, nullptr, val.data(), has.data(),
+                                  &o) == FZ_ERR_ARG);
+    REQUIRE(val[1] == -5.0);
+    REQUIRE(has[1] == 7);
+}

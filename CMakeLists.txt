@@ -31,10 +31,12 @@ target_include_directories(fastzonal PUBLIC
 target_compile_definitions(fastzonal
     PRIVATE FASTZONAL_BUILDING FASTZONAL_VERSION_STRING="${PROJECT_VERSION}"
 )
+# Contraction (fused multiply-add) is disabled everywhere: the determinism guarantee between
+# backends and across builds requires every a*b+c to round the same way.
 if(MSVC)
-    target_compile_options(fastzonal PRIVATE /W4 /permissive- $<$<CONFIG:Release>:/O2>)
+    target_compile_options(fastzonal PRIVATE /W4 /permissive- /fp:precise $<$<CONFIG:Release>:/O2>)
 else()
-    target_compile_options(fastzonal PRIVATE -Wall -Wextra -Wpedantic $<$<CONFIG:Release>:-O3>)
+    target_compile_options(fastzonal PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off $<$<CONFIG:Release>:-O3>)
     if(FASTZONAL_NATIVE_ARCH)
         target_compile_options(fastzonal PRIVATE -march=native)
     endif()
