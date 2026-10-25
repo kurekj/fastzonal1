@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fastzonal"
+version = "0.1.0"
+description = "Zonal statistics and polygon rasterisation over raster grids (ctypes binding of the fastzonal C library)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.22"]
+
+[project.optional-dependencies]
+geometry = ["shapely>=2.0"]
+test = ["pytest", "shapely>=2.0"]
+
+[tool.setuptools]
+packages = ["fastzonal"]
+
+[tool.setuptools.package-data]
+fastzonal = ["lib/*"]

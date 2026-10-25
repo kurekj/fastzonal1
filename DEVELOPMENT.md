@@ -21,6 +21,7 @@ cmake --preset debug   && cmake --build --preset debug   && ctest --preset debug
 cmake --build --preset release --target dotnet_native_copy && dotnet test bindings/dotnet/FastZonal.slnx
 dotnet test benchmarks/csharp/FzBench.slnx
 python -m pytest benchmarks/tests -q
+FASTZONAL_LIBRARY=$PWD/build/release/libfastzonal.so python -m pytest bindings/python/tests -q
 ```
 
 Run a single Catch2 test by name: `build/release/tests/fz_tests "square center mode"`. The parity
