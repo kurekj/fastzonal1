@@ -1,0 +1,337 @@
+fixture,zones,raster,n_zones,n_cells,stage,tool,threads,rep,seconds,compute_seconds,max_abs_diff,n_compared,n_only_tool,n_only_fastzonal,n_diff_cells,note
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,1,0,0.014252,0.012414,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,1,1,0.007292,0.005539,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,1,2,0.006327,0.005263,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,8,0,0.002346,0.001354,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,8,1,0.002180,0.001205,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,8,2,0.002199,0.001186,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,56,0,0.002395,0.000718,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,56,1,0.002323,0.000706,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,fastzonal,56,2,0.002349,0.000707,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,rasterstats,1,0,0.312097,0.312097,2.547266683450289e-05,1092,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,rasterstats,1,1,0.317284,0.317284,2.547266683450289e-05,1092,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,rasterstats,1,2,0.307510,0.307510,2.547266683450289e-05,1092,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,exactextract,1,0,0.044981,0.037207,0.7573488709183493,1092,0,0,,coverage-fraction weighted mean
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,exactextract,1,1,0.044558,0.036943,0.7573488709183493,1092,0,0,,coverage-fraction weighted mean
+biebrza_upper,grid1000,dem30,1092,2250412,pipeline,exactextract,1,2,0.044613,0.036972,0.7573488709183493,1092,0,0,,coverage-fraction weighted mean
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,1,0,0.002297,0.001538,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,1,1,0.003668,0.002914,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,1,2,0.003394,0.002610,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,8,0,0.002112,0.000854,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,8,1,0.002223,0.001113,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,8,2,0.002252,0.001090,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,56,0,0.001642,0.000235,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,56,1,0.002699,0.001364,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,fastzonal,56,2,0.002689,0.001044,,,,,0,
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,gdal,1,0,0.017435,0.017195,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,gdal,1,1,0.047884,0.047737,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid1000,dem30,1092,2250412,rasterize,gdal,1,2,0.015708,0.015504,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,1,0,0.003351,0.003351,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,1,1,0.003211,0.003211,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,1,2,0.003101,0.003101,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,8,0,0.001763,0.001763,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,8,1,0.001014,0.001014,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,8,2,0.000815,0.000815,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,56,0,0.000553,0.000553,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,56,1,0.000521,0.000521,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,fastzonal,56,2,0.000499,0.000499,0.0,1092,0,0,,
+biebrza_upper,grid1000,dem30,1092,2250412,stats,numpy,1,0,0.012491,0.012491,0.0,1092,0,0,,np.bincount with float64 weights
+biebrza_upper,grid1000,dem30,1092,2250412,stats,numpy,1,1,0.010391,0.010391,0.0,1092,0,0,,np.bincount with float64 weights
+biebrza_upper,grid1000,dem30,1092,2250412,stats,numpy,1,2,0.010397,0.010397,0.0,1092,0,0,,np.bincount with float64 weights
+biebrza_upper,grid1000,dem30,1092,2250412,stats,xrspatial,1,0,0.087469,0.087469,2.488812197043444e-05,1092,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid1000,dem30,1092,2250412,stats,xrspatial,1,1,0.085459,0.085459,2.488812197043444e-05,1092,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid1000,dem30,1092,2250412,stats,xrspatial,1,2,0.085073,0.085073,2.488812197043444e-05,1092,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,1,0,0.009117,0.006743,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,1,1,0.007688,0.005337,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,1,2,0.007857,0.005494,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,8,0,0.005460,0.001643,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,8,1,0.005346,0.001633,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,8,2,0.005345,0.001612,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,56,0,0.005285,0.000892,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,56,1,0.046191,0.001639,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,fastzonal,56,2,0.005675,0.000857,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,rasterstats,1,0,1.142765,1.142765,2.3837113246827357e-05,4176,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,rasterstats,1,1,1.138508,1.138508,2.3837113246827357e-05,4176,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,rasterstats,1,2,1.143920,1.143920,2.3837113246827357e-05,4176,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,exactextract,1,0,0.118191,0.089366,1.5030347029684492,4176,2,0,,coverage-fraction weighted mean
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,exactextract,1,1,0.117512,0.088908,1.5030347029684492,4176,2,0,,coverage-fraction weighted mean
+biebrza_upper,grid500,dem30,4178,2250412,pipeline,exactextract,1,2,0.118096,0.088925,1.5030347029684492,4176,2,0,,coverage-fraction weighted mean
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,1,0,0.005006,0.002519,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,1,1,0.043996,0.003777,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,1,2,0.006120,0.003277,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,8,0,0.004643,0.000765,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,8,1,0.004580,0.000727,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,8,2,0.004321,0.000745,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,56,0,0.004879,0.000360,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,56,1,0.004712,0.000357,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,fastzonal,56,2,0.004718,0.000350,,,,,0,
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,gdal,1,0,0.081601,0.081125,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,gdal,1,1,0.046935,0.046200,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid500,dem30,4178,2250412,rasterize,gdal,1,2,0.042535,0.042059,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,1,0,0.003331,0.003331,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,1,1,0.003114,0.003114,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,1,2,0.002976,0.002976,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,8,0,0.001143,0.001143,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,8,1,0.000889,0.000889,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,8,2,0.000866,0.000866,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,56,0,0.000643,0.000643,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,56,1,0.000602,0.000602,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,fastzonal,56,2,0.000609,0.000609,0.0,4176,0,0,,
+biebrza_upper,grid500,dem30,4178,2250412,stats,numpy,1,0,0.010770,0.010770,0.0,4176,0,0,,np.bincount with float64 weights
+biebrza_upper,grid500,dem30,4178,2250412,stats,numpy,1,1,0.009707,0.009707,0.0,4176,0,0,,np.bincount with float64 weights
+biebrza_upper,grid500,dem30,4178,2250412,stats,numpy,1,2,0.007673,0.007673,0.0,4176,0,0,,np.bincount with float64 weights
+biebrza_upper,grid500,dem30,4178,2250412,stats,xrspatial,1,0,0.118498,0.118498,3.216717695408988e-05,4176,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid500,dem30,4178,2250412,stats,xrspatial,1,1,0.125410,0.125410,3.216717695408988e-05,4176,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid500,dem30,4178,2250412,stats,xrspatial,1,2,0.116543,0.116543,3.216717695408988e-05,4176,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,1,0,0.017316,0.007775,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,1,1,0.053961,0.008073,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,1,2,0.017769,0.008002,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,8,0,0.056823,0.003794,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,8,1,0.012155,0.002333,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,8,2,0.011934,0.002426,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,56,0,0.015742,0.002607,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,56,1,0.056520,0.002452,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,fastzonal,56,2,0.016307,0.002530,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,rasterstats,1,0,4.355126,4.355126,2.6702880859375e-05,16275,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,rasterstats,1,1,4.370556,4.370556,2.6702880859375e-05,16275,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,rasterstats,1,2,4.336109,4.336109,2.6702880859375e-05,16275,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,exactextract,1,0,0.436414,0.286895,6.895775173001937,16275,15,0,,coverage-fraction weighted mean
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,exactextract,1,1,0.397518,0.284127,6.895775173001937,16275,15,0,,coverage-fraction weighted mean
+biebrza_upper,grid250,dem30,16290,2250412,pipeline,exactextract,1,2,0.436931,0.285836,6.895775173001937,16275,15,0,,coverage-fraction weighted mean
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,1,0,0.014304,0.004510,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,1,1,0.014543,0.005178,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,1,2,0.052224,0.005669,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,8,0,0.018001,0.002049,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,8,1,0.056780,0.002280,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,8,2,0.011202,0.001407,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,56,0,0.052602,0.001343,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,56,1,0.015091,0.000970,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,fastzonal,56,2,0.014901,0.001145,,,,,0,
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,gdal,1,0,0.187311,0.185180,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,gdal,1,1,0.195297,0.192161,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid250,dem30,16290,2250412,rasterize,gdal,1,2,0.189767,0.187476,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,1,0,0.003476,0.003476,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,1,1,0.003322,0.003322,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,1,2,0.003182,0.003182,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,8,0,0.002027,0.002027,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,8,1,0.001164,0.001164,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,8,2,0.001126,0.001126,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,56,0,0.001014,0.001014,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,56,1,0.000687,0.000687,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,fastzonal,56,2,0.000701,0.000701,0.0,16275,0,0,,
+biebrza_upper,grid250,dem30,16290,2250412,stats,numpy,1,0,0.008966,0.008966,0.0,16275,0,0,,np.bincount with float64 weights
+biebrza_upper,grid250,dem30,16290,2250412,stats,numpy,1,1,0.007473,0.007473,0.0,16275,0,0,,np.bincount with float64 weights
+biebrza_upper,grid250,dem30,16290,2250412,stats,numpy,1,2,0.007280,0.007280,0.0,16275,0,0,,np.bincount with float64 weights
+biebrza_upper,grid250,dem30,16290,2250412,stats,xrspatial,1,0,0.241469,0.241469,4.380749118126914e-05,16275,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid250,dem30,16290,2250412,stats,xrspatial,1,1,0.242760,0.242760,4.380749118126914e-05,16275,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid250,dem30,16290,2250412,stats,xrspatial,1,2,0.242907,0.242907,4.380749118126914e-05,16275,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,1,0,0.190261,0.020140,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,1,1,0.190837,0.017070,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,1,2,0.137279,0.016468,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,8,0,0.176796,0.008191,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,8,1,0.177551,0.008682,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,8,2,0.182651,0.008288,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,56,0,0.172984,0.009372,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,56,1,0.183055,0.008974,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,fastzonal,56,2,0.178134,0.008522,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,rasterstats,1,0,26.937042,26.937042,3.178914386126053e-05,99814,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,rasterstats,1,1,26.966652,26.966652,3.178914386126053e-05,99814,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,rasterstats,1,2,26.812369,26.812369,3.178914386126053e-05,99814,0,0,,"pixel-centre rule, all_touched=False"
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,exactextract,1,0,2.533246,1.618164,4.292447949041815,99814,229,0,,coverage-fraction weighted mean
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,exactextract,1,1,2.567382,1.615337,4.292447949041815,99814,229,0,,coverage-fraction weighted mean
+biebrza_upper,grid100,dem30,100043,2250412,pipeline,exactextract,1,2,2.519369,1.631242,4.292447949041815,99814,229,0,,coverage-fraction weighted mean
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,1,0,0.181344,0.010682,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,1,1,0.184578,0.011246,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,1,2,0.144459,0.010516,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,8,0,0.186297,0.005401,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,8,1,0.183208,0.005484,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,8,2,0.138091,0.005135,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,56,0,0.171962,0.004506,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,56,1,0.176838,0.004043,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,fastzonal,56,2,0.183214,0.004503,,,,,0,
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,gdal,1,0,1.077787,1.010467,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,gdal,1,1,1.101590,1.036257,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid100,dem30,100043,2250412,rasterize,gdal,1,2,1.105935,1.042099,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,1,0,0.005646,0.005646,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,1,1,0.005186,0.005186,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,1,2,0.005118,0.005118,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,8,0,0.003468,0.003468,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,8,1,0.003147,0.003147,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,8,2,0.003252,0.003252,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,56,0,0.004556,0.004556,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,56,1,0.004429,0.004429,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,fastzonal,56,2,0.004431,0.004431,0.0,99814,0,0,,
+biebrza_upper,grid100,dem30,100043,2250412,stats,numpy,1,0,0.008929,0.008929,0.0,99814,0,0,,np.bincount with float64 weights
+biebrza_upper,grid100,dem30,100043,2250412,stats,numpy,1,1,0.008068,0.008068,0.0,99814,0,0,,np.bincount with float64 weights
+biebrza_upper,grid100,dem30,100043,2250412,stats,numpy,1,2,0.007763,0.007763,0.0,99814,0,0,,np.bincount with float64 weights
+biebrza_upper,grid100,dem30,100043,2250412,stats,xrspatial,1,0,1.989464,1.989464,3.5603841155307236e-05,99814,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid100,dem30,100043,2250412,stats,xrspatial,1,1,1.978253,1.978253,3.5603841155307236e-05,99814,0,0,,xrspatial.zonal.stats on the fastzonal mask
+biebrza_upper,grid100,dem30,100043,2250412,stats,xrspatial,1,2,1.971328,1.971328,3.5603841155307236e-05,99814,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,1,0,0.033296,0.029518,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,1,1,0.033036,0.028635,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,1,2,0.033510,0.029038,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,8,0,0.016360,0.009981,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,8,1,0.059794,0.010619,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,8,2,0.013620,0.008848,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,56,0,0.013588,0.005781,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,56,1,0.013759,0.005839,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,fastzonal,56,2,0.013331,0.005792,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,rasterstats,1,0,1.762143,1.762143,2.3413623978285614e-05,6194,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,rasterstats,1,1,1.740129,1.740129,2.3413623978285614e-05,6194,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,rasterstats,1,2,1.726326,1.726326,2.3413623978285614e-05,6194,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,exactextract,1,0,0.214642,0.171301,1.3120669459406997,6194,0,0,,coverage-fraction weighted mean
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,exactextract,1,1,0.215026,0.171911,1.3120669459406997,6194,0,0,,coverage-fraction weighted mean
+mazovia_5000,grid1000,dem30,6194,11679001,pipeline,exactextract,1,2,0.254591,0.171957,1.3120669459406997,6194,0,0,,coverage-fraction weighted mean
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,1,0,0.015342,0.011177,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,1,1,0.016482,0.012244,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,1,2,0.016693,0.012820,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,8,0,0.011297,0.005217,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,8,1,0.010963,0.005108,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,8,2,0.052036,0.006229,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,56,0,0.011591,0.003787,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,56,1,0.011345,0.003818,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,fastzonal,56,2,0.011772,0.004103,,,,,0,
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,gdal,1,0,0.092135,0.090952,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,gdal,1,1,0.090934,0.090122,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid1000,dem30,6194,11679001,rasterize,gdal,1,2,0.131418,0.130572,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,1,0,0.018273,0.018273,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,1,1,0.018140,0.018140,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,1,2,0.018114,0.018114,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,8,0,0.004672,0.004672,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,8,1,0.004657,0.004657,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,8,2,0.004635,0.004635,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,56,0,0.001537,0.001537,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,56,1,0.001491,0.001491,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,fastzonal,56,2,0.001515,0.001515,0.0,6194,0,0,,
+mazovia_5000,grid1000,dem30,6194,11679001,stats,numpy,1,0,0.088843,0.088843,0.0,6194,0,0,,np.bincount with float64 weights
+mazovia_5000,grid1000,dem30,6194,11679001,stats,numpy,1,1,0.085806,0.085806,0.0,6194,0,0,,np.bincount with float64 weights
+mazovia_5000,grid1000,dem30,6194,11679001,stats,numpy,1,2,0.085948,0.085948,0.0,6194,0,0,,np.bincount with float64 weights
+mazovia_5000,grid1000,dem30,6194,11679001,stats,xrspatial,1,0,0.572730,0.572730,3.63791861275331e-05,6194,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid1000,dem30,6194,11679001,stats,xrspatial,1,1,0.570232,0.570232,3.63791861275331e-05,6194,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid1000,dem30,6194,11679001,stats,xrspatial,1,2,0.570312,0.570312,3.63791861275331e-05,6194,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,1,0,0.095337,0.035586,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,1,1,0.051331,0.034619,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,1,2,0.096113,0.035672,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,8,0,0.075643,0.012490,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,8,1,0.029837,0.011996,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,8,2,0.073003,0.012881,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,56,0,0.071174,0.008303,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,56,1,0.028973,0.008274,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,fastzonal,56,2,0.070262,0.007967,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,rasterstats,1,0,6.618139,6.618139,3.2365528340960736e-05,24289,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,rasterstats,1,1,6.600934,6.600934,3.2365528340960736e-05,24289,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,rasterstats,1,2,6.625796,6.625796,3.2365528340960736e-05,24289,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,exactextract,1,0,0.689013,0.478335,2.4449556206950263,24289,2,0,,coverage-fraction weighted mean
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,exactextract,1,1,0.691689,0.478273,2.4449556206950263,24289,2,0,,coverage-fraction weighted mean
+mazovia_5000,grid500,dem30,24291,11679001,pipeline,exactextract,1,2,0.715520,0.476313,2.4449556206950263,24289,2,0,,coverage-fraction weighted mean
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,1,0,0.078581,0.018152,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,1,1,0.034365,0.017741,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,1,2,0.077257,0.017397,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,8,0,0.072234,0.008013,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,8,1,0.024561,0.007551,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,8,2,0.066141,0.006945,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,56,0,0.067720,0.005226,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,56,1,0.026337,0.005246,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,fastzonal,56,2,0.067541,0.005276,,,,,0,
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,gdal,1,0,0.322200,0.278429,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,gdal,1,1,0.289625,0.286004,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid500,dem30,24291,11679001,rasterize,gdal,1,2,0.323370,0.278474,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,1,0,0.018031,0.018031,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,1,1,0.017796,0.017796,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,1,2,0.017604,0.017604,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,8,0,0.005068,0.005068,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,8,1,0.004971,0.004971,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,8,2,0.005041,0.005041,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,56,0,0.002262,0.002262,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,56,1,0.002272,0.002272,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,fastzonal,56,2,0.002511,0.002511,0.0,24289,0,0,,
+mazovia_5000,grid500,dem30,24291,11679001,stats,numpy,1,0,0.082012,0.082012,0.0,24289,0,0,,np.bincount with float64 weights
+mazovia_5000,grid500,dem30,24291,11679001,stats,numpy,1,1,0.082390,0.082390,0.0,24289,0,0,,np.bincount with float64 weights
+mazovia_5000,grid500,dem30,24291,11679001,stats,numpy,1,2,0.082110,0.082110,0.0,24289,0,0,,np.bincount with float64 weights
+mazovia_5000,grid500,dem30,24291,11679001,stats,xrspatial,1,0,0.896043,0.896043,4.4710495899380476e-05,24289,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid500,dem30,24291,11679001,stats,xrspatial,1,1,0.889699,0.889699,4.4710495899380476e-05,24289,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid500,dem30,24291,11679001,stats,xrspatial,1,2,0.889728,0.889728,4.4710495899380476e-05,24289,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,1,0,0.213756,0.048767,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,1,1,0.220400,0.049530,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,1,2,0.168839,0.048716,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,8,0,0.191502,0.018703,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,8,1,0.138729,0.017902,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,8,2,0.182391,0.017749,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,56,0,0.135103,0.014102,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,56,1,0.174816,0.014099,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,fastzonal,56,2,0.177023,0.014340,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,rasterstats,1,0,25.989779,25.989779,4.655223781924178e-05,96077,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,rasterstats,1,1,26.059311,26.059311,4.655223781924178e-05,96077,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,rasterstats,1,2,26.011843,26.011843,4.655223781924178e-05,96077,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,exactextract,1,0,2.577169,1.640412,5.061922486421423,96077,29,0,,coverage-fraction weighted mean
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,exactextract,1,1,2.524773,1.644134,5.061922486421423,96077,29,0,,coverage-fraction weighted mean
+mazovia_5000,grid250,dem30,96106,11679001,pipeline,exactextract,1,2,2.505200,1.631838,5.061922486421423,96077,29,0,,coverage-fraction weighted mean
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,1,0,0.202068,0.028783,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,1,1,0.148983,0.028692,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,1,2,0.203045,0.029766,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,8,0,0.188570,0.010581,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,8,1,0.130810,0.010766,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,8,2,0.176714,0.011209,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,56,0,0.184022,0.007597,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,56,1,0.131464,0.007645,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,fastzonal,56,2,0.177282,0.007561,,,,,0,
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,gdal,1,0,1.108020,1.046850,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,gdal,1,1,1.120707,1.057184,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid250,dem30,96106,11679001,rasterize,gdal,1,2,1.064174,0.997742,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,1,0,0.019851,0.019851,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,1,1,0.019888,0.019888,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,1,2,0.020473,0.020473,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,8,0,0.007055,0.007055,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,8,1,0.007059,0.007059,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,8,2,0.007074,0.007074,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,56,0,0.005726,0.005726,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,56,1,0.005754,0.005754,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,fastzonal,56,2,0.005763,0.005763,0.0,96077,0,0,,
+mazovia_5000,grid250,dem30,96106,11679001,stats,numpy,1,0,0.080214,0.080214,0.0,96077,0,0,,np.bincount with float64 weights
+mazovia_5000,grid250,dem30,96106,11679001,stats,numpy,1,1,0.080390,0.080390,0.0,96077,0,0,,np.bincount with float64 weights
+mazovia_5000,grid250,dem30,96106,11679001,stats,numpy,1,2,0.080528,0.080528,0.0,96077,0,0,,np.bincount with float64 weights
+mazovia_5000,grid250,dem30,96106,11679001,stats,xrspatial,1,0,2.315232,2.315232,4.069010418561447e-05,96077,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid250,dem30,96106,11679001,stats,xrspatial,1,1,2.307469,2.307469,4.069010418561447e-05,96077,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid250,dem30,96106,11679001,stats,xrspatial,1,2,2.302477,2.302477,4.069010418561447e-05,96077,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,1,0,0.925635,0.103847,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,1,1,1.058442,0.105928,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,1,2,0.961835,0.104416,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,8,0,0.923393,0.055261,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,8,1,0.943595,0.054411,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,8,2,0.963261,0.052781,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,56,0,0.865261,0.055489,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,56,1,0.987200,0.055747,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,fastzonal,56,2,0.891748,0.055345,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,rasterstats,1,0,159.810014,159.810014,3.9418538420932236e-05,596270,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,rasterstats,1,1,159.808267,159.808267,3.9418538420932236e-05,596270,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,rasterstats,1,2,160.533616,160.533616,3.9418538420932236e-05,596270,0,0,,"pixel-centre rule, all_touched=False"
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,exactextract,1,0,15.085382,9.605930,5.332193817532328,596270,567,0,,coverage-fraction weighted mean
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,exactextract,1,1,15.257628,9.582306,5.332193817532328,596270,567,0,,coverage-fraction weighted mean
+mazovia_5000,grid100,dem30,596837,11679001,pipeline,exactextract,1,2,15.314371,9.609225,5.332193817532328,596270,567,0,,coverage-fraction weighted mean
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,1,0,0.965444,0.065906,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,1,1,0.795759,0.066374,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,1,2,0.997134,0.066902,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,8,0,1.000339,0.030296,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,8,1,0.891681,0.030694,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,8,2,0.800156,0.031383,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,56,0,0.908542,0.024059,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,56,1,0.895165,0.023872,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,fastzonal,56,2,1.004008,0.023039,,,,,0,
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,gdal,1,0,6.587208,6.380952,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,gdal,1,1,6.627210,6.298778,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid100,dem30,596837,11679001,rasterize,gdal,1,2,6.564258,6.258465,,,,,0,"rasterio.features.rasterize (GDAL), all_touched=False"
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,1,0,0.037155,0.037155,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,1,1,0.038140,0.038140,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,1,2,0.034693,0.034693,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,8,0,0.020745,0.020745,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,8,1,0.019521,0.019521,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,8,2,0.019265,0.019265,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,56,0,0.028154,0.028154,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,56,1,0.027693,0.027693,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,fastzonal,56,2,0.028135,0.028135,0.0,596270,0,0,,
+mazovia_5000,grid100,dem30,596837,11679001,stats,numpy,1,0,0.075120,0.075120,0.0,596270,0,0,,np.bincount with float64 weights
+mazovia_5000,grid100,dem30,596837,11679001,stats,numpy,1,1,0.074664,0.074664,0.0,596270,0,0,,np.bincount with float64 weights
+mazovia_5000,grid100,dem30,596837,11679001,stats,numpy,1,2,0.075077,0.075077,0.0,596270,0,0,,np.bincount with float64 weights
+mazovia_5000,grid100,dem30,596837,11679001,stats,xrspatial,1,0,125.210599,125.210599,5.425347222853816e-05,596270,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid100,dem30,596837,11679001,stats,xrspatial,1,1,125.063755,125.063755,5.425347222853816e-05,596270,0,0,,xrspatial.zonal.stats on the fastzonal mask
+mazovia_5000,grid100,dem30,596837,11679001,stats,xrspatial,1,2,124.977018,124.977018,5.425347222853816e-05,596270,0,0,,xrspatial.zonal.stats on the fastzonal mask

@@ -1,0 +1,32 @@
+{
+  "stamp": "env_20261025_221520",
+  "hostname": "deep3",
+  "os": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "cpu": "Intel(R) Xeon(R) Gold 5420+",
+  "cores": 112,
+  "git_commit": "62e182d657b9cc8633d089fd4e2b764fbd355008",
+  "git_dirty": false,
+  "fastzonal_library": "/data/fastzonal/fastzonal1/build/release/libfastzonal.so",
+  "omp_proc_bind": "close",
+  "omp_places": "cores",
+  "cpu_governor": "powersave",
+  "versions": {
+    "numpy": "2.4.6",
+    "shapely": "2.2.0",
+    "rasterio": "1.4.4",
+    "rasterstats": "0.21.0",
+    "exactextract": "0.3.0",
+    "xrspatial": "0.5.3",
+    "xarray": "2026.9.0",
+    "fastzonal": "0.1.0",
+    "gdal": "3.12.3"
+  },
+  "cases": "biebrza_upper:grid1000:dem30,biebrza_upper:grid500:dem30,biebrza_upper:grid250:dem30,biebrza_upper:grid100:dem30,mazovia_5000:grid1000:dem30,mazovia_5000:grid500:dem30,mazovia_5000:grid250:dem30,mazovia_5000:grid100:dem30",
+  "threads": "1,8,56",
+  "reps": 3,
+  "max_seconds": 300.0,
+  "band_rows": 16,
+  "raster_mode": "center",
+  "numactl": "cpunodebind=0 membind=0"
+}
