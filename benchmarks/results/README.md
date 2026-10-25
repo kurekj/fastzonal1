@@ -47,3 +47,18 @@ cells; both only for empty zones, so the cost is negligible either way). Fixture
 creation for the reduction ops, alignment of the ratio denominator and the checksum are outside
 it. Known semantic corner: a computed ratio equal to -9999 is NoData for the reference and the
 C# rungs but not for the library (see benchmarks/fixtures/FORMAT.md); no fixture contains one.
+
+## External-tool comparison and parity log
+
+- `tools_<stamp>.csv` and `tools_env_<stamp>.json`: `benchmarks/run_tools.sh` (compare_tools.py) against
+  rasterstats, exactextract, xarray-spatial, rasterio/GDAL and NumPy on the same fixtures; one untimed
+  warm-up call, then three timed repetitions per tool, stage and thread count; every row carries the
+  agreement of that repetition's result with the one-thread fastzonal result of the same stage (see the
+  script's docstring). `compare_tools.py summarise --raw results/tools_<stamp>.csv --out paper_assets/`
+  writes `tools_summary.json` and `tables/tools_{pipeline,stages}.tex` (whole-call seconds, input
+  conversion included).
+- `parity_<stamp>.log`: the output of `build/release/tests/fz_parity` on the archive's expected outputs
+  (Upper Biebrza, 20 grid-and-raster combinations) and on the committed fixtures (Leze, synthetic): one
+  line per comparison with the number of zones, the worst zone and its absolute error, plus the Catch2
+  assertion totals.
+- `lscpu_deep3.txt`: CPU topology of the benchmark host.
