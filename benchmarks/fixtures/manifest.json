@@ -1,7 +1,10 @@
 {
   "archive": {
     "url": "https://zenodo.org/record/TODO/files/fixtures-v1.tar.zst",
-    "sha256": null
+    "sha256": "30ba87848199d9be881048ecfbf9e0ad100f64b70fb273ed16c5ed97c014b601",
+    "bytes": 54314564,
+    "contents": "fixtures (leze_micro, biebrza_upper, gradascica, mazovia_5000), expected/biebrza_upper, synthetic_small, manifest.json",
+    "note": "the URL is filled in when the archive is deposited; until then set FZ_FIXTURE_ARCHIVE to a local copy"
   },
   "fixtures": {
     "leze_micro": {
