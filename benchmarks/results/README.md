@@ -62,3 +62,8 @@ C# rungs but not for the library (see benchmarks/fixtures/FORMAT.md); no fixture
   line per comparison with the number of zones, the worst zone and its absolute error, plus the Catch2
   assertion totals.
 - `lscpu_deep3.txt`: CPU topology of the benchmark host.
+
+Note on `fixtures_manifest_sha256`: the value recorded by both ladder runs
+(`64d78a1d...`) is the content hash of the `fixtures`, `expected` and `generated` tables of the
+manifest as of commit 62e182d; commit ab07fb1 then corrected the HydroBASINS licence label in the
+`sources` entries of the `fixtures` table (hash `a93cfb12...` from then on). No file hash changed.
