@@ -105,6 +105,49 @@ FZ_API int fz_rasterize(const double* xy, const int64_t* ring_start, const uint8
                         const int32_t* ring_zone, int64_t n_rings, fz_transform t, fz_shape s,
                         int32_t* mask_out, const fz_options* opt);
 
+/* ---- zonal statistics ---------------------------------------------------------------- */
+
+/* Accumulates count, sum, sum of squares, min and max of the raster per zone.
+ * raster: s.height * s.width values, row-major. mask: zone index per pixel, -1 = outside; any other value
+ * outside [-1, n_zones) makes the call fail with FZ_ERR_ARG before out is touched.
+ * Cells equal to nodata, and NaN cells, are skipped. out: n_zones entries, fully written; a zone with no cell
+ * has count 0 and min = max = 0. Accumulation is in double for every raster type. */
+FZ_API int fz_zonal_f32(const float* raster, const int32_t* mask, fz_shape s, int32_t n_zones, float nodata,
+                        fz_stats* out, const fz_options* opt);
+FZ_API int fz_zonal_f64(const double* raster, const int32_t* mask, fz_shape s, int32_t n_zones, double nodata,
+                        fz_stats* out, const fz_options* opt);
+
+/* Mean per zone with the reference fallback: sum / count when count > 0; otherwise the raster value at
+ * (centroid_row[z], centroid_col[z]) when that cell is inside the raster and not NoData; otherwise 0.0.
+ * centroid_row / centroid_col may both be NULL, in which case empty zones get 0.0. */
+FZ_API int fz_zonal_mean_fallback_f32(const float* raster, fz_shape s, float nodata, const fz_stats* stats,
+                                      int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
+                                      double* mean_out);
+FZ_API int fz_zonal_mean_fallback_f64(const double* raster, fz_shape s, double nodata, const fz_stats* stats,
+                                      int32_t n_zones, const int32_t* centroid_row, const int32_t* centroid_col,
+                                      double* mean_out);
+
+/* Most frequent value per zone (ties resolve to the smallest value). NoData and NaN cells are skipped.
+ * A zone without cells takes the value at its centroid cell when centroid arrays are given and the cell is
+ * inside the raster and not NoData; otherwise value_out[z] = 0 and has_value_out[z] = 0. */
+FZ_API int fz_zonal_majority_f32(const float* raster, const int32_t* mask, fz_shape s, int32_t n_zones, float nodata,
+                                 const int32_t* centroid_row, const int32_t* centroid_col, double* value_out,
+                                 uint8_t* has_value_out, const fz_options* opt);
+FZ_API int fz_zonal_majority_f64(const double* raster, const int32_t* mask, fz_shape s, int32_t n_zones,
+                                 double nodata, const int32_t* centroid_row, const int32_t* centroid_col,
+                                 double* value_out, uint8_t* has_value_out, const fz_options* opt);
+FZ_API int fz_zonal_majority_i32(const int32_t* raster, const int32_t* mask, fz_shape s, int32_t n_zones,
+                                 int32_t nodata, const int32_t* centroid_row, const int32_t* centroid_col,
+                                 double* value_out, uint8_t* has_value_out, const fz_options* opt);
+
+/* Statistics of the cell-wise ratio num / den of two rasters on the same grid. Cells where either raster is
+ * NoData or NaN, or where |den| < eps, are excluded. out as in fz_zonal_*. */
+FZ_API int fz_zonal_ratio_f32(const float* num, const float* den, const int32_t* mask, fz_shape s, int32_t n_zones,
+                              float nodata_num, float nodata_den, double eps, fz_stats* out, const fz_options* opt);
+FZ_API int fz_zonal_ratio_f64(const double* num, const double* den, const int32_t* mask, fz_shape s,
+                              int32_t n_zones, double nodata_num, double nodata_den, double eps, fz_stats* out,
+                              const fz_options* opt);
+
 /* ---- library information ------------------------------------------------------------- */
 
 /* Library version, e.g. "0.1.0". */
