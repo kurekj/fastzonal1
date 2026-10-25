@@ -53,11 +53,11 @@ With Docker, mount the fixtures and a results directory so the measurements surv
 container:
 
 ```bash
-docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures"     -v "$PWD/benchmarks/results:/work/benchmarks/results" fastzonal:bench --quick
-docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures"     -v "$PWD/benchmarks/results:/work/benchmarks/results" fastzonal:bench
+docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" \n    -v "$PWD/benchmarks/results:/work/benchmarks/results" fastzonal:bench --quick
+docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" \n    -v "$PWD/benchmarks/results:/work/benchmarks/results" fastzonal:bench
 # parity and the tables from inside the image:
-docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" --entrypoint bash fastzonal:bench -c     'FZ_PARITY_FIXTURE_DIR=benchmarks/fixtures FZ_PARITY_EXPECTED_DIR=benchmarks/fixtures/expected build/release/tests/fz_parity'
-docker run --rm -v "$PWD/benchmarks/results:/work/benchmarks/results" -v "$PWD/paper_assets:/work/paper_assets"     --entrypoint python fastzonal:bench benchmarks/make_paper_assets.py --raw 'benchmarks/results/raw_*.csv' --out paper_assets
+docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" --entrypoint bash fastzonal:bench -c \n    'FZ_PARITY_FIXTURE_DIR=benchmarks/fixtures FZ_PARITY_EXPECTED_DIR=benchmarks/fixtures/expected build/release/tests/fz_parity'
+docker run --rm -v "$PWD/benchmarks/results:/work/benchmarks/results" -v "$PWD/paper_assets:/work/paper_assets" \n    --entrypoint python fastzonal:bench benchmarks/make_paper_assets.py --raw 'benchmarks/results/raw_*.csv' --out paper_assets
 ```
 
 ## 5. Make the tables and figures
