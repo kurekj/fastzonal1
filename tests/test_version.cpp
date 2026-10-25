@@ -13,4 +13,10 @@ TEST_CASE("openmp flag matches build") {
 #endif
 }
 
-TEST_CASE("cuda flag is off in a cpu build") { REQUIRE(fz_has_cuda() == 0); }
+TEST_CASE("cuda flag matches build") {
+#if defined(FASTZONAL_TEST_EXPECT_CUDA)
+    REQUIRE(fz_has_cuda() == 1);
+#else
+    REQUIRE(fz_has_cuda() == 0);
+#endif
+}

@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+include(GNUInstallDirs)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
@@ -19,10 +20,11 @@ endif()
 add_library(fastzonal SHARED
     src/core/version.cpp
     src/core/options.cpp
+    src/core/rasterize.cpp
 )
 target_include_directories(fastzonal PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_compile_definitions(fastzonal
     PRIVATE FASTZONAL_BUILDING FASTZONAL_VERSION_STRING="${PROJECT_VERSION}"
@@ -45,7 +47,6 @@ if(FASTZONAL_WITH_CUDA)
     target_compile_definitions(fastzonal PRIVATE FASTZONAL_WITH_CUDA)
 endif()
 
-include(GNUInstallDirs)
 install(TARGETS fastzonal EXPORT fastzonalTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

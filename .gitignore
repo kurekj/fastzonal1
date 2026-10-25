@@ -15,8 +15,9 @@ __pycache__/
 .venv/
 *.egg-info/
 
-# plan workspaces (git-ignored scratch for the executing-plans skill)
+# local planning scratch, never published
 .superpowers/
+docs/superpowers/
 
 # fixtures that are fetched, not committed (small ones under tests/fixtures are tracked)
 benchmarks/fixtures/*/

@@ -2,6 +2,11 @@
 # One-time, sudo-free toolchain setup inside WSL (Ubuntu 24.04): cmake and ninja into ~/.local.
 # g++ and make come from the distribution. Run: wsl -d Ubuntu-24.04 -- bash tools/wsl-setup.sh
 set -euo pipefail
+# x86-64 only: the downloaded cmake and ninja binaries are x86-64 builds.
+if [ "$(uname -m)" != "x86_64" ]; then echo "wsl-setup.sh supports x86_64 only (got $(uname -m))" >&2; exit 1; fi
+for tool in curl python3 g++ make; do
+    command -v "$tool" >/dev/null 2>&1 || { echo "missing prerequisite: $tool (apt install curl python3 g++ make)" >&2; exit 1; }
+done
 mkdir -p "$HOME/.local/bin" "$HOME/.local/share"
 if ! "$HOME/.local/bin/cmake" --version >/dev/null 2>&1; then
     tmp=$(mktemp -d)

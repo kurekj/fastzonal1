@@ -84,6 +84,27 @@ FZ_API double fz_stats_mean(const fz_stats* s);
 /* Population standard deviation from sum and sumsq, or 0.0 when count < 2. */
 FZ_API double fz_stats_std(const fz_stats* s);
 
+/* ---- rasterisation ------------------------------------------------------------------- */
+
+/* Rasterises polygons into a zone-index mask.
+ *
+ * xy:           n_points * 2 doubles (x0, y0, x1, y1, ...).
+ * ring_start:   n_rings + 1 offsets into the points; ring i is the points [ring_start[i], ring_start[i+1]).
+ *               Rings need not repeat their first point at the end.
+ * ring_is_hole: 1 when ring i is a hole of the nearest preceding exterior ring, else 0.
+ * ring_zone:    zone index (0 .. n_zones - 1) of the polygon the ring belongs to; a hole carries the zone of its
+ *               exterior ring.
+ * mask_out:     s.height * s.width int32 values, row-major, fully written: the zone of the polygon covering the
+ *               pixel, or -1 when no polygon covers it. Polygons are processed in ring order and later polygons
+ *               overwrite earlier ones.
+ *
+ * FZ_RASTER_CENTER: a pixel belongs to a polygon when its centre is inside by the even-odd rule, holes honoured.
+ * FZ_RASTER_COMPAT: the SpongeGIS reference rule: exterior rings only, centre test on rows, and on each row every
+ *               column from the one containing the left crossing to the one containing the right crossing. */
+FZ_API int fz_rasterize(const double* xy, const int64_t* ring_start, const uint8_t* ring_is_hole,
+                        const int32_t* ring_zone, int64_t n_rings, fz_transform t, fz_shape s,
+                        int32_t* mask_out, const fz_options* opt);
+
 /* ---- library information ------------------------------------------------------------- */
 
 /* Library version, e.g. "0.1.0". */

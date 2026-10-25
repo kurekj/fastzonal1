@@ -7,7 +7,8 @@ Status: pre-release (0.1.0). The API is not stable yet.
 
 ## Build and test
 
-Requires CMake 3.20 or newer, a C++17 compiler and OpenMP.
+Requires CMake 3.20 or newer, Ninja, Git, a C++17 compiler with OpenMP, and network access on
+the first configure (the Catch2 test framework is fetched by CMake).
 
 ```bash
 cmake --preset release
@@ -15,7 +16,17 @@ cmake --build --preset release
 ctest --preset release
 ```
 
-On Windows with Visual Studio 2022 use the `release-msvc` preset instead.
+On Windows with Visual Studio 2022 use the `release-msvc` preset instead. Without Ninja, the
+same build with the default generator is:
+
+```bash
+cmake -S . -B build/plain -DCMAKE_BUILD_TYPE=Release
+cmake --build build/plain --config Release
+ctest --test-dir build/plain -C Release --output-on-failure
+```
+
+Inside WSL (Ubuntu) without root, `bash tools/wsl-setup.sh` installs cmake and ninja into
+`~/.local` and `bash tools/wsl-run.sh <command>` runs a command with them on `PATH`.
 
 ## Layout
 
