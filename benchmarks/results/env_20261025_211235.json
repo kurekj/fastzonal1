@@ -1,5 +1,5 @@
 {
-  "stamp": "20261025_205430",
+  "stamp": "20261025_211235",
   "hostname": "deep3",
   "os": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
   "cpu": "Intel(R) Xeon(R) Gold 5420+",
@@ -8,13 +8,18 @@
   "compiler": "c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
   "cmake": "cmake version 4.4.4",
   "dotnet": "10.0.113",
-  "git_commit": "3e2ccca9290786fccf956d43baada89b4e854880",
+  "git_commit": "4e537afc3637825b006133492513f8a2b09929a1",
   "git_dirty": true,
   "cpu_governor": "powersave",
   "numa_node0_cpus": "56",
   "omp_proc_bind": "close",
   "omp_places": "cores",
   "omp_thread_limit": null,
+  "malloc_env": {
+    "MALLOC_MMAP_THRESHOLD_": "1073741824",
+    "MALLOC_TRIM_THRESHOLD_": "4294967296",
+    "MALLOC_TOP_PAD_": "268435456"
+  },
   "fz_version": "0.1.0",
   "cmake_cache": {
     "CMAKE_BUILD_TYPE": "Release",
