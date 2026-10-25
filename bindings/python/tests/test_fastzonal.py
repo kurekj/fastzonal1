@@ -25,6 +25,40 @@ def test_version_and_errors():
     assert e.value.code == 1 and "invalid argument" in str(e.value)
 
 
+def _rings_reference(polygons):
+    # straightforward per-ring loop, the specification polygons_to_rings must reproduce
+    xy, ring_start, is_hole, ring_zone, n = [], [0], [], [], 0
+    for zone, geom in enumerate(polygons):
+        parts = [geom] if geom.geom_type == "Polygon" else list(geom.geoms)
+        for part in parts:
+            for k, ring in enumerate([part.exterior, *part.interiors]):
+                coords = np.asarray(ring.coords, dtype=np.float64)[:-1, :2]
+                xy.append(coords.reshape(-1))
+                n += len(coords)
+                ring_start.append(n)
+                is_hole.append(1 if k > 0 else 0)
+                ring_zone.append(zone)
+    return (np.concatenate(xy), np.asarray(ring_start, dtype=np.int64), np.asarray(is_hole, dtype=np.uint8),
+            np.asarray(ring_zone, dtype=np.int32))
+
+
+def test_polygons_to_rings_matches_reference_and_roundtrips():
+    from shapely.geometry import MultiPolygon
+    holed = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)], holes=[[(4, 4), (6, 4), (6, 6), (4, 6)], [(1, 1), (2, 1), (2, 2)]])
+    multi = MultiPolygon([box(20, 20, 25, 25), Polygon([(30, 30), (40, 30), (40, 40), (30, 40)], holes=[[(33, 33), (35, 33), (35, 35)]])])
+    polys = [box(0, 0, 1, 1), holed, multi, box(50, 50, 51, 52)]
+    got = fz.polygons_to_rings(polys)
+    want = _rings_reference(polys)
+    for g, w in zip(got, want):
+        assert g.dtype == w.dtype and np.array_equal(g, w)
+    assert got[2].tolist() == [0, 0, 1, 1, 0, 0, 1, 0] and got[3].tolist() == [0, 1, 1, 1, 2, 2, 2, 3]
+    back = fz.rings_to_polygons(got, 5)
+    assert [g.geom_type for g in back] == ["Polygon", "Polygon", "MultiPolygon", "Polygon", "Polygon"]
+    assert all(a.equals(b) for a, b in zip(back[:4], polys)) and back[4].is_empty
+    again = fz.polygons_to_rings(list(back[:4]))
+    assert all(np.array_equal(a, b) for a, b in zip(again, got))
+
+
 def test_rasterize_square_center_and_compat():
     sq = box(2, 2, 5, 5)
     m = fz.rasterize([sq], transform=(0, 10, 1, 1), width=10, height=10)

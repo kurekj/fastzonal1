@@ -25,7 +25,7 @@ from typing import Iterable, Optional, Sequence, Tuple
 import numpy as np
 
 __all__ = ["version", "has_openmp", "Options", "rasterize", "zonal", "mean", "majority", "ratio",
-           "polygons_to_rings", "FastZonalError", "STATS_DTYPE"]
+           "polygons_to_rings", "rings_to_polygons", "FastZonalError", "STATS_DTYPE"]
 
 STATS_DTYPE = np.dtype([("count", "<i8"), ("sum", "<f8"), ("sumsq", "<f8"), ("min", "<f8"), ("max", "<f8")])
 
@@ -170,24 +170,62 @@ def _centroids(centroids, n_zones):
 
 def polygons_to_rings(polygons: Sequence) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Flat ring arrays (xy, ring_start, ring_is_hole, ring_zone) from shapely Polygons or
-    MultiPolygons, one zone per input geometry, in input order."""
-    xy_parts, ring_start, is_hole, ring_zone = [], [0], [], []
-    n = 0
-    for zone, geom in enumerate(polygons):
-        parts = [geom] if geom.geom_type == "Polygon" else list(geom.geoms)
-        for part in parts:
-            for k, ring in enumerate([part.exterior, *part.interiors]):
-                coords = np.asarray(ring.coords, dtype=np.float64)[:, :2]
-                if len(coords) > 1 and np.array_equal(coords[0], coords[-1]):
-                    coords = coords[:-1]
-                xy_parts.append(coords.reshape(-1))
-                n += len(coords)
-                ring_start.append(n)
-                is_hole.append(1 if k > 0 else 0)
-                ring_zone.append(zone)
-    xy = np.concatenate(xy_parts) if xy_parts else np.zeros(0, dtype=np.float64)
-    return (xy, np.asarray(ring_start, dtype=np.int64), np.asarray(is_hole, dtype=np.uint8),
-            np.asarray(ring_zone, dtype=np.int32))
+    MultiPolygons, one zone per input geometry, in input order. Vectorised through shapely 2:
+    rings keep their vertex order, the closing vertex is dropped, empty geometries give no rings."""
+    import shapely
+    geoms = np.asarray(polygons, dtype=object)
+    parts, part_zone = shapely.get_parts(geoms, return_index=True)
+    rings, ring_part = shapely.get_rings(parts, return_index=True)
+    n_rings = len(rings)
+    if n_rings == 0:
+        return (np.zeros(0, dtype=np.float64), np.zeros(1, dtype=np.int64), np.zeros(0, dtype=np.uint8),
+                np.zeros(0, dtype=np.int32))
+    coords, coord_ring = shapely.get_coordinates(rings, return_index=True)
+    counts = np.bincount(coord_ring, minlength=n_rings)
+    # shapely rings are closed: the last vertex repeats the first, drop it when the ring has more than one vertex
+    last = np.cumsum(counts) - 1
+    keep = np.ones(len(coords), dtype=bool)
+    closed = counts > 1
+    keep[last[closed]] = False
+    xy = np.ascontiguousarray(coords[keep][:, :2].reshape(-1), dtype=np.float64)
+    kept_counts = counts - closed.astype(np.int64)
+    ring_start = np.zeros(n_rings + 1, dtype=np.int64)
+    np.cumsum(kept_counts, out=ring_start[1:])
+    # get_rings lists the exterior first, then the interiors, part by part
+    is_hole = np.ones(n_rings, dtype=np.uint8)
+    first_of_part = np.r_[True, ring_part[1:] != ring_part[:-1]]
+    is_hole[first_of_part] = 0
+    return xy, ring_start, is_hole, part_zone[ring_part].astype(np.int32)
+
+
+def rings_to_polygons(rings, n_zones: int) -> np.ndarray:
+    """Inverse of polygons_to_rings: an object array of n_zones shapely Polygons/MultiPolygons
+    (an empty polygon for a zone without rings)."""
+    import shapely
+    xy, ring_start, is_hole, ring_zone = (np.asarray(rings[0], dtype=np.float64), np.asarray(rings[1], dtype=np.int64),
+                                          np.asarray(rings[2]).astype(bool), np.asarray(rings[3], dtype=np.int64))
+    out = np.empty(n_zones, dtype=object)
+    out[:] = [shapely.Polygon()] * n_zones
+    n_rings = len(ring_zone)
+    if n_rings == 0:
+        return out
+    counts = np.diff(ring_start)
+    coord_ring = np.repeat(np.arange(n_rings), counts)
+    lin = shapely.linearrings(xy.reshape(-1, 2), indices=coord_ring)
+    part_of_ring = np.cumsum(~is_hole) - 1
+    polys = shapely.polygons(lin, indices=part_of_ring)
+    part_zone = ring_zone[~is_hole]
+    if part_zone.min() < 0 or part_zone.max() >= n_zones:
+        raise ValueError("ring_zone must lie in [0, n_zones)")
+    multi = np.bincount(part_zone, minlength=n_zones) > 1
+    # single-part zones keep a Polygon, multi-part zones become a MultiPolygon
+    single = ~multi[part_zone]
+    out[part_zone[single]] = polys[single]
+    if multi.any():
+        sel = multi[part_zone]
+        packed = shapely.multipolygons(polys[sel], indices=np.unique(part_zone[sel], return_inverse=True)[1])
+        out[np.unique(part_zone[sel])] = packed
+    return out
 
 
 def rasterize(polygons=None, *, transform, width: int, height: int, mode: str = "center", rings=None,
