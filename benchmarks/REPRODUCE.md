@@ -68,6 +68,9 @@ python benchmarks/make_paper_assets.py --raw benchmarks/results/raw_<stamp>.csv 
 
 `paper_assets/summary.json` holds every number (median, min, max per point; speedups; checksum
 comparison); `tables/*.tex` are the fragments the manuscript inputs; `figures/*.png` the plots.
+Name the raw file of your own run explicitly: the script refuses to pool raw files from different
+commits or machines (such as the committed reference run next to yours) unless `--allow-mixed` is
+given, and then records that in the summary.
 
 Expected wall time of the full matrix on the reference machine (2x Xeon Gold 5420+, 112
 threads): about ten minutes. The reference raw and environment files are committed under
