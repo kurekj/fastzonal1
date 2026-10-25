@@ -1,0 +1,10 @@
+.git
+build/
+.superpowers/
+docs/superpowers/
+**/bin/
+**/obj/
+bindings/dotnet/FastZonal/runtimes/
+benchmarks/fixtures/*/
+paper_assets/
+*.log
