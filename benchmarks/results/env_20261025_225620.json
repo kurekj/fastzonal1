@@ -1,0 +1,47 @@
+{
+  "stamp": "20261025_225620",
+  "hostname": "deep3",
+  "os": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "cpu": "Intel(R) Xeon(R) Gold 5420+",
+  "cores": 112,
+  "mem_kb": 1051848584,
+  "compiler": "c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "cmake": "cmake version 4.4.4",
+  "dotnet": "10.0.113",
+  "git_commit": "6de83f1da41aeddd575de378987a6988911dcacd",
+  "git_dirty": false,
+  "cpu_governor": "powersave",
+  "numa_node0_cpus": "56",
+  "omp_proc_bind": "close",
+  "omp_places": "cores",
+  "omp_thread_limit": null,
+  "malloc_env": {
+    "MALLOC_MMAP_THRESHOLD_": "1073741824",
+    "MALLOC_TRIM_THRESHOLD_": "4294967296",
+    "MALLOC_TOP_PAD_": "268435456"
+  },
+  "fz_version": "0.1.0",
+  "cmake_cache": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "FASTZONAL_NATIVE_ARCH": "ON"
+  },
+  "extra_flags": "-ffp-contract=off (always), OpenMP",
+  "band_rows": 16,
+  "reps": 5,
+  "threads": [
+    "1",
+    "2",
+    "4",
+    "8",
+    "16",
+    "32",
+    "56",
+    "112"
+  ],
+  "quick": false,
+  "fixtures_dir": "/data/fastzonal/fixtures",
+  "fixtures_manifest_sha256": "64d78a1dd7be181ffcb7bf3afe5ea0859f7b78a1989ccd1c076cc296b9591041",
+  "omp_num_threads": null
+}
