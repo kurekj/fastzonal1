@@ -34,13 +34,32 @@ docker run --rm -v "$PWD/benchmarks/results:/work/benchmarks/results" -v "$PWD/m
     --raw "benchmarks/results/raw_$STAMP.csv" --out my_assets
 ```
 
-The image build runs every test suite (C++, .NET, Python). The parity check against the C#
-baseline's outputs on the full fixture set:
+The image build runs the C++, .NET and benchmark-script test suites (the Python binding tests run
+in CI on Linux). The parity check against the C# baseline's outputs on the full fixture set, with
+the per-comparison error log saved next to the results:
 
 ```bash
-docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" --entrypoint bash fastzonal:bench -c \
-    'FZ_PARITY_FIXTURE_DIR=benchmarks/fixtures FZ_PARITY_EXPECTED_DIR=benchmarks/fixtures/expected build/release/tests/fz_parity'
+docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" \
+    -v "$PWD/benchmarks/results:/work/benchmarks/results" --entrypoint bash fastzonal:bench -c \
+    'FZ_PARITY_FIXTURE_DIR=benchmarks/fixtures FZ_PARITY_EXPECTED_DIR=benchmarks/fixtures/expected \
+     build/release/tests/fz_parity | tee benchmarks/results/parity_mine.log'
 ```
+
+The external-tool comparison (rasterstats, exactextract, xarray-spatial, rasterio/GDAL, NumPy; all
+in the image and in the conda environment) and its tables:
+
+```bash
+docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" \
+    -v "$PWD/benchmarks/results:/work/benchmarks/results" --entrypoint bash fastzonal:bench -c \
+    'FZ_FIXTURES=benchmarks/fixtures FZ_THREADS=1,8,56 FZ_REPS=3 FZ_STAMP=mine bash benchmarks/run_tools.sh'
+docker run --rm -v "$PWD/benchmarks/results:/work/benchmarks/results" -v "$PWD/my_assets:/work/my_assets" \
+    --entrypoint python fastzonal:bench benchmarks/compare_tools.py summarise \
+    --raw benchmarks/results/tools_mine.csv --out my_assets
+```
+
+`run_tools.sh` uses the library in `build/release` and `python3` by default; the published run used
+the conda environment of `conda-lock.yml` on the host with eight cases, thread counts 1, 8 and 56
+and three repetitions after one untimed warm-up (`results/README.md`).
 
 Pinning (`numactl`) is not available inside the image unless the host passes `--privileged`; the
 runner then runs unpinned and records that in the environment file.

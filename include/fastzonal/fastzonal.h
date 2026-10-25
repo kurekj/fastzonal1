@@ -67,10 +67,13 @@ typedef enum fz_raster_mode {
 /* Work is split into horizontal bands of band_rows rows; bands are computed independently and
  * merged in ascending order, so for a given band_rows the result does not depend on the backend
  * or the thread count (changing band_rows changes the floating-point summation order).
- * Memory for a reduction: each worker thread holds one dense array of n_zones fz_stats (40 bytes
- * per zone) plus sparse per-band partials of the zones each band touches; the number of workers
- * is never more than the number of bands. With 1e6 zones and 112 threads that is about 4.5 GB
- * of scratch; reduce threads or raise band_rows when memory is tight. */
+ * Memory for a statistics reduction: each worker thread holds one dense structure-of-arrays scratch
+ * of n_zones accumulators (40 bytes per zone) plus a one-byte seen flag per zone and a list of the
+ * zones it touched; every band adds a sparse partial of the zones it touched. The number of workers
+ * is never more than the number of bands. With 1e6 zones and 112 workers the dense scratch alone is
+ * about 4.6 GB; reduce threads, or raise band_rows when that lowers the band count below the thread
+ * count, when memory is tight. The majority reduction keeps per-zone value-to-count maps instead,
+ * whose size grows with the number of distinct values per zone. */
 typedef struct fz_options {
     int backend;     /* fz_backend; AUTO picks OpenMP when built with it, else serial */
     int threads;     /* 0 = all hardware threads; capped by the number of bands */

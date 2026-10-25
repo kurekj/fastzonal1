@@ -32,3 +32,6 @@ benchmarks/results/status.json
 
 # logs
 *.log
+
+# parity logs of published runs are tracked
+!benchmarks/results/parity_*.log
