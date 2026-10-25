@@ -162,6 +162,34 @@ void rasterize_band(const PolygonSet& set, const fz_transform& t, const fz_shape
     }
 }
 
+void rasterize_band(const PolygonSet& set, const std::vector<int32_t>& indices, const fz_transform& t,
+                    const fz_shape& s, int32_t row0, int32_t row1, int mode, int32_t* mask) {
+    std::fill(mask + static_cast<size_t>(row0) * s.width, mask + static_cast<size_t>(row1) * s.width, -1);
+    std::vector<double> crossings;
+    crossings.reserve(64);
+    for (int32_t i : indices) {
+        const Polygon& p = set.polygons[static_cast<size_t>(i)];
+        if (mode == FZ_RASTER_COMPAT)
+            fill_compat(set, p, t, s, row0, row1, mask, crossings);
+        else
+            fill_center(set, p, t, s, row0, row1, mask, crossings);
+    }
+}
+
+std::vector<std::vector<int32_t>> bucket_by_band(const PolygonSet& set, const fz_shape& s, int32_t band_rows,
+                                                 int32_t n_bands) {
+    std::vector<std::vector<int32_t>> buckets(static_cast<size_t>(n_bands));
+    for (size_t i = 0; i < set.polygons.size(); ++i) {
+        const Polygon& p = set.polygons[i];
+        if (p.row_end <= p.row_begin) continue;
+        const int32_t b0 = p.row_begin / band_rows;
+        const int32_t b1 = std::min<int32_t>((p.row_end - 1) / band_rows, n_bands - 1);
+        for (int32_t b = b0; b <= b1; ++b) buckets[static_cast<size_t>(b)].push_back(static_cast<int32_t>(i));
+    }
+    (void)s;
+    return buckets;
+}
+
 }  // namespace fz
 
 extern "C" {
@@ -188,8 +216,9 @@ int fz_rasterize(const double* xy, const int64_t* ring_start, const uint8_t* rin
         rc = fz::build_polygon_set(xy, ring_start, ring_is_hole, ring_zone, n_rings, t, s, opt->raster_mode, set);
         if (rc != FZ_OK) return rc;
         const int mode = opt->raster_mode;
-        fz::for_each_band(plan, s, [&](int32_t, int32_t row0, int32_t row1) {
-            fz::rasterize_band(set, t, s, row0, row1, mode, mask_out);
+        const auto buckets = fz::bucket_by_band(set, s, plan.band_rows, plan.n_bands);
+        fz::for_each_band(plan, s, [&](int32_t band, int32_t row0, int32_t row1) {
+            fz::rasterize_band(set, buckets[static_cast<size_t>(band)], t, s, row0, row1, mode, mask_out);
         });
         return FZ_OK;
     } catch (const std::bad_alloc&) {

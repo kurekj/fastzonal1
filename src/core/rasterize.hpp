@@ -39,4 +39,14 @@ int build_polygon_set(const double* xy, const int64_t* ring_start, const uint8_t
 void rasterize_band(const PolygonSet& set, const fz_transform& t, const fz_shape& s, int32_t row0,
                     int32_t row1, int mode, int32_t* mask);
 
+// Same, visiting only the polygons listed in `indices` (ascending polygon order, so later
+// polygons still win); the lists come from bucket_by_band.
+void rasterize_band(const PolygonSet& set, const std::vector<int32_t>& indices, const fz_transform& t,
+                    const fz_shape& s, int32_t row0, int32_t row1, int mode, int32_t* mask);
+
+// For every band of band_rows rows, the ascending indices of the polygons whose row range touches
+// it. Built once per call so a band costs its own polygons, not all of them.
+std::vector<std::vector<int32_t>> bucket_by_band(const PolygonSet& set, const fz_shape& s, int32_t band_rows,
+                                                 int32_t n_bands);
+
 }  // namespace fz
