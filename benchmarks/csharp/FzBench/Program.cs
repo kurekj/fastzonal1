@@ -42,6 +42,9 @@ public static class Program
     public static IRung MakeRung(string name, int threads) => name switch
     {
         "csharp-baseline" => new BaselineRung(),
+        "csharp-optimised" => new OptimisedRung(threads),
+        "fastzonal-openmp" => new FastZonalRung(serial: false, threads),
+        "fastzonal-serial" => new FastZonalRung(serial: true, threads),
         _ => throw new ArgumentException($"unknown rung {name}")
     };
 

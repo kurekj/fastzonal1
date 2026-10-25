@@ -5,6 +5,7 @@ option(FASTZONAL_BUILD_TESTS "Build the Catch2 test suite" ON)
 option(FASTZONAL_WITH_OPENMP "Build the OpenMP backend" ON)
 option(FASTZONAL_WITH_CUDA "Build the CUDA backend" OFF)
 option(FASTZONAL_NATIVE_ARCH "Compile for the host CPU (-march=native); OFF for portable binaries" OFF)
+option(FASTZONAL_BUILD_BENCH "Build the fz_bench benchmark driver" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -89,6 +90,19 @@ add_custom_target(dotnet_native_copy
         ${CMAKE_CURRENT_SOURCE_DIR}/bindings/dotnet/FastZonal/runtimes/${FASTZONAL_DOTNET_RID}/native/
     DEPENDS fastzonal
     COMMENT "Copying the native library into bindings/dotnet/FastZonal/runtimes/${FASTZONAL_DOTNET_RID}/native")
+
+if(FASTZONAL_BUILD_BENCH)
+    add_executable(fz_bench benchmarks/cpp/fz_bench.cpp)
+    target_link_libraries(fz_bench PRIVATE fastzonal fz_fixture_io)
+    target_compile_features(fz_bench PRIVATE cxx_std_17)
+    if(FASTZONAL_WITH_OPENMP)
+        target_link_libraries(fz_bench PRIVATE OpenMP::OpenMP_CXX)
+    endif()
+    if(WIN32)
+        add_custom_command(TARGET fz_bench POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fastzonal> $<TARGET_FILE_DIR:fz_bench>)
+    endif()
+endif()
 
 if(FASTZONAL_BUILD_TESTS)
     enable_testing()
