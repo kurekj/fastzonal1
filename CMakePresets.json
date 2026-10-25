@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
   "configurePresets": [
     {
       "name": "release",
@@ -23,8 +23,7 @@
     },
     {
       "name": "release-msvc",
-      "displayName": "Release (Visual Studio 2022, x64)",
-      "generator": "Visual Studio 17 2022",
+      "displayName": "Release (newest installed Visual Studio, x64)",
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build/release-msvc"
     }

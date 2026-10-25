@@ -51,5 +51,9 @@ if(FASTZONAL_BUILD_BENCH)
     target_compile_definitions(fz_bench_test PRIVATE
         FZ_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures" FZ_BENCH_EXE="$<TARGET_FILE:fz_bench>")
     add_dependencies(fz_bench_test fz_bench)
+    if(WIN32)
+        add_custom_command(TARGET fz_bench_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fastzonal> $<TARGET_FILE_DIR:fz_bench_test>)
+    endif()
     catch_discover_tests(fz_bench_test TEST_PREFIX "bench: ")
 endif()

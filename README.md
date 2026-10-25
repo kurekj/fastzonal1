@@ -1,7 +1,7 @@
 # fastzonal
 
 Zonal statistics and polygon rasterisation over raster grids: a C++17 core with serial and
-OpenMP backends, a C ABI, and a .NET binding. Built for the workloads behind opportunity
+OpenMP backends, a C ABI, and .NET and Python bindings. Built for the workloads behind opportunity
 mapping and suitability analysis, where dozens of raster layers are aggregated to the same set of
 planning units.
 
@@ -32,7 +32,7 @@ cmake --build --preset release
 ctest --preset release
 ```
 
-On Windows with Visual Studio 2022 use the `release-msvc` preset instead. Without Ninja, the
+On Windows with Visual Studio (2022 or newer) use the `release-msvc` preset instead; it needs CMake 3.21+. Without Ninja, the
 same build with the default generator is:
 
 ```bash
@@ -53,6 +53,16 @@ dotnet test bindings/dotnet/FastZonal.slnx
 
 See `bindings/dotnet/README.md` for the API and the native-library resolution rules.
 
+## Python binding
+
+```bash
+pip install -e bindings/python[test]
+FASTZONAL_LIBRARY=$PWD/build/release/libfastzonal.so python -m pytest bindings/python/tests -q
+```
+
+`fastzonal.rasterize`, `zonal`, `mean`, `majority` and `ratio` take NumPy arrays (and shapely
+geometries for the zones); see `bindings/python/README.md`.
+
 ## Benchmarks
 
 `benchmarks/` holds the fixtures (public data only), the C# harness with the reference code as
@@ -66,6 +76,7 @@ tables.
 - `src/core`: algorithms shared by all backends; `src/tools`: fixture reader
 - `tests`: Catch2 unit and parity tests, committed fixtures with the reference's expected outputs
 - `bindings/dotnet`: the FastZonal class library and its tests
+- `bindings/python`: the ctypes package and its tests
 - `benchmarks`: fixtures, harnesses, runner, paper assets
 - `DEVELOPMENT.md`: the rules that keep results reproducible
 

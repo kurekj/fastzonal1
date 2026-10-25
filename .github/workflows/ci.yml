@@ -30,8 +30,10 @@ jobs:
         run: dotnet test benchmarks/csharp/FzBench.slnx
       - name: Python script tests
         run: |
-          python3 -m pip install --quiet numpy rasterio pyogrio shapely pyproj pytest
+          python3 -m pip install --quiet numpy rasterio pyogrio shapely pyproj pytest matplotlib
           python3 -m pytest benchmarks/tests -q
+      - name: Python binding tests
+        run: FASTZONAL_LIBRARY=$PWD/build/release/libfastzonal.so python3 -m pytest bindings/python/tests -q
       - name: Upload test logs on failure
         if: failure()
         uses: actions/upload-artifact@v4

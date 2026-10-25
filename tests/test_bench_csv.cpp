@@ -21,6 +21,16 @@ std::vector<std::string> lines_of(const fs::path& p) {
     return out;
 }
 
+// cmd.exe strips the outer quotes of a command line that starts with one; wrapping the whole
+// line in another pair keeps the quoted executable and argument paths intact.
+int run(const std::string& cmd) {
+#ifdef _WIN32
+    return std::system(("\"" + cmd + "\"").c_str());
+#else
+    return std::system(cmd.c_str());
+#endif
+}
+
 int fields(const std::string& line) {
     int n = 1;
     for (char c : line) n += (c == ',');
@@ -37,7 +47,7 @@ TEST_CASE("fz_bench appends reps lines with the shared columns") {
     const std::string backend = omp ? "openmp" : "serial";
     const std::string cmd = std::string("\"") + FZ_BENCH_EXE + "\" \"" + fixture.string() + "\" mean rect synth --backend " +
                             backend + " --threads 2 --reps 3 --out \"" + out.string() + "\"";
-    REQUIRE(std::system(cmd.c_str()) == 0);
+    REQUIRE(run(cmd) == 0);
     auto l = lines_of(out);
     REQUIRE(l.size() == 4);  // header + 3 reps
     REQUIRE(l[0] == "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows,load_seconds");
@@ -48,13 +58,13 @@ TEST_CASE("fz_bench appends reps lines with the shared columns") {
         REQUIRE(l[i].find(omp ? ",2,16," : ",1,16,") != std::string::npos);
     }
     // a second call appends without repeating the header
-    REQUIRE(std::system(cmd.c_str()) == 0);
+    REQUIRE(run(cmd) == 0);
     REQUIRE(lines_of(out).size() == 7);
     // every op is accepted and the serial backend is named
     for (const char* op : {"rasterize", "majority", "ratio"}) {
         const std::string c2 = std::string("\"") + FZ_BENCH_EXE + "\" \"" + fixture.string() + "\" " + op +
                                " rect synth --den synth --backend serial --reps 1 --out \"" + out.string() + "\"";
-        REQUIRE(std::system(c2.c_str()) == 0);
+        REQUIRE(run(c2) == 0);
     }
     auto all = lines_of(out);
     REQUIRE(all.size() == 10);
