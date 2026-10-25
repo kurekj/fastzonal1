@@ -56,14 +56,17 @@ public class RungParityTests
         var denOnGrid = Fixture.PrepareDenominator(f.Rasters[raster], f.Rasters[den]);
         AssertClose(rung.Ratio(f, zones, raster, denOnGrid, mask), Expected(fixtureId, $"ratio_{zones}_{raster}_{den}.csv"),
             1e-6, "ratio");
-        Assert.True(rung.EffectiveThreads >= 1);
+        Assert.True(rung.EffectiveThreads(f.Rasters[raster].Height) >= 1);
     }
 
     [Fact]
-    public void OptimisedRungUsesTheRequestedThreads()
+    public void EffectiveThreadsAreCappedByTheBandCount()
     {
         var rung = Program.MakeRung("csharp-optimised", threads: 2);
-        Assert.Equal(2, rung.EffectiveThreads);
+        Assert.Equal(2, rung.EffectiveThreads(200));
+        var capped = Program.MakeRung("fastzonal-openmp", threads: 112, bandRows: 16);
+        Assert.Equal(13, capped.EffectiveThreads(200));  // 200 rows / 16 = 13 bands
+        Assert.Equal(1, Program.MakeRung("fastzonal-serial", threads: 112).EffectiveThreads(200));
     }
 
     private static bool NativeAvailable()

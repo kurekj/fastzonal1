@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Runs the whole benchmark matrix and writes benchmarks/results/raw_<stamp>.csv, env_<stamp>.json
-# and status.json. Resumable: a point already present in the raw CSV is skipped. Intended to run
-# under tmux on the benchmark machine:
+# and status.json. Resumable: a point whose repetitions 0..reps-1 are all present in the raw CSV
+# is skipped. Intended to run under tmux on the benchmark machine:
 #
 #   bash benchmarks/run_all.sh [--quick] [--fixtures DIR] [--stamp STAMP] [--threads "1 2 4 8"]
+#                              [--band-rows B] [--reps R]
 #
 # --quick: one repetition, biebrza_upper only (a smoke test of the whole pipeline).
 # The library is built Release with FASTZONAL_NATIVE_ARCH=ON into build/bench; the C# harness is
 # published Release. Every measurement line carries the checksum, and the runner stops with an
-# error when a rung's checksum differs from the baseline's for the same workload.
+# error when a rung's checksum differs from the baseline's for the same workload. The band size
+# (default 16 rows) is passed to every rung that has one and recorded in each CSV line.
 set -euo pipefail
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 results="$repo/benchmarks/results"
@@ -17,12 +19,15 @@ quick=0
 stamp="$(date +%Y%m%d_%H%M%S)"
 threads_list="1 2 4 8 16 32 56 112"
 reps=5
+band_rows=16
 while [ $# -gt 0 ]; do
     case "$1" in
         --quick) quick=1; reps=1 ;;
         --fixtures) fixtures="$2"; shift ;;
         --stamp) stamp="$2"; shift ;;
         --threads) threads_list="$2"; shift ;;
+        --band-rows) band_rows="$2"; shift ;;
+        --reps) reps="$2"; shift ;;
         *) echo "unknown option $1" >&2; exit 1 ;;
     esac
     shift
@@ -43,24 +48,44 @@ dotnet publish "$repo/benchmarks/csharp/FzBench/FzBench.csproj" -c Release -o "$
       >> "$results/build_$stamp.log" 2>&1
 fzbench_dll="$repo/build/bench/FzBench/FzBench.dll"
 
-# environment record
-python3 - "$env_json" "$repo" "$fz_bench" <<'EOF'
-import json, os, platform, subprocess, sys
-out, repo, fz = sys.argv[1:4]
+# The environment record is written once per stamp; resuming a stamp must not rewrite it (the
+# measurements already in the raw file were taken with that build), so a resumed run refuses a
+# different commit or settings instead.
+python3 - "$env_json" "$repo" "$fixtures" "$band_rows" "$reps" "$threads_list" "$quick" <<'EOF'
+import hashlib, json, os, platform, subprocess, sys
+out, repo, fixtures, band_rows, reps, threads, quick = sys.argv[1:8]
 def sh(cmd):
     try: return subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.DEVNULL).strip()
     except Exception: return ""
 cpu = ""
 for line in open("/proc/cpuinfo"):
     if line.startswith("model name"): cpu = line.split(":", 1)[1].strip(); break
-json.dump({
-    "hostname": platform.node(), "os": platform.platform(), "cpu": cpu, "cores": os.cpu_count(),
+cache = {}
+for line in open(os.path.join(repo, "build/bench/CMakeCache.txt")):
+    for key in ("CMAKE_CXX_COMPILER:", "CMAKE_CXX_FLAGS_RELEASE:", "FASTZONAL_NATIVE_ARCH:", "CMAKE_BUILD_TYPE:"):
+        if line.startswith(key): cache[key.rstrip(":")] = line.split("=", 1)[1].strip()
+manifest = os.path.join(fixtures, "manifest.json")
+record = {
+    "stamp": os.path.basename(out)[4:-5], "hostname": platform.node(), "os": platform.platform(), "cpu": cpu,
+    "cores": os.cpu_count(),
     "mem_kb": next((int(l.split()[1]) for l in open("/proc/meminfo") if l.startswith("MemTotal")), None),
-    "compiler": sh("g++ --version | head -1"), "cmake": sh("cmake --version | head -1"),
+    "compiler": sh(f"{cache.get('CMAKE_CXX_COMPILER', 'g++')} --version | head -1"), "cmake": sh("cmake --version | head -1"),
     "dotnet": sh("dotnet --version"), "git_commit": sh(f"git -C '{repo}' rev-parse HEAD"),
     "git_dirty": bool(sh(f"git -C '{repo}' status --porcelain")),
-    "flags": "Release -O3 -march=native -ffp-contract=off OpenMP", "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
-}, open(out, "w"), indent=2)
+    "fz_version": sh(f"grep -m1 'project(fastzonal VERSION' '{repo}/CMakeLists.txt'").split("VERSION")[-1].split()[0] if True else "",
+    "cmake_cache": cache, "extra_flags": "-ffp-contract=off (always), OpenMP",
+    "band_rows": int(band_rows), "reps": int(reps), "threads": threads.split(), "quick": quick == "1",
+    "fixtures_dir": fixtures,
+    "fixtures_manifest_sha256": hashlib.sha256(open(manifest, "rb").read()).hexdigest() if os.path.exists(manifest) else None,
+    "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
+}
+if os.path.exists(out):
+    old = json.load(open(out))
+    for key in ("git_commit", "band_rows", "reps", "fixtures_manifest_sha256", "cpu"):
+        if old.get(key) != record.get(key):
+            sys.exit(f"cannot resume stamp {record['stamp']}: {key} changed ({old.get(key)!r} -> {record.get(key)!r})")
+    sys.exit(0)
+json.dump(record, open(out, "w"), indent=2)
 EOF
 
 # ---- matrix ----------------------------------------------------------------------------------
@@ -74,6 +99,9 @@ add_fixture() {  # fixture, grids...
         points+=("$fx|majority|$g|clc100|")
         points+=("$fx|ratio|$g|dem30|dem60")
     done
+    # resolution axis: the same zones over the generalised terrain
+    points+=("$fx|mean|grid250|dem60|")
+    points+=("$fx|mean|grid250|dem120|")
 }
 if [ "$quick" = 1 ]; then
     add_fixture biebrza_upper grid500 grid100
@@ -88,21 +116,34 @@ for t in $threads_list; do rungs+=("csharp-optimised|$t" "fastzonal-openmp|$t");
 
 total=$(( ${#points[@]} * ${#rungs[@]} ))
 done_n=0
+measured_n=0
 start=$(date +%s)
 
-have() {  # fixture op rung threads zones raster den -> 0 when every rep is present
-    local want="$1,$2,$3,$4,"; local pat; pat=$(printf '%s' "$want" | sed 's/[.[\*^$]/\\&/g')
-    local n; n=$(grep -c "^$pat[0-9]*,[^,]*,[^,]*,$5,$6,$7," "$raw" 2>/dev/null || true); n=${n:-0}
-    [ "$n" -ge "$reps" ]
+# 0 when repetitions 0..reps-1 of this exact point are all present (fields compared exactly)
+have() {
+    python3 - "$raw" "$reps" "$1" "$2" "$3" "$4" "$5" "$6" "$7" <<'EOF'
+import csv, os, sys
+raw, reps = sys.argv[1], int(sys.argv[2])
+fx, op, rung, threads, zones, raster, den = sys.argv[3:10]
+if not os.path.exists(raw): sys.exit(1)
+seen = set()
+for r in csv.DictReader(open(raw, newline="")):
+    if (r.get("fixture"), r.get("op"), r.get("rung"), r.get("threads"), r.get("zones"), r.get("raster"), r.get("den")) \
+            == (fx, op, rung, threads, zones, raster, den) and r.get("n_cells"):
+        try: seen.add(int(r["rep"]))
+        except ValueError: pass
+sys.exit(0 if all(k in seen for k in range(reps)) else 1)
+EOF
 }
 
 write_status() {
     local now; now=$(date +%s)
     local elapsed=$(( now - start ))
     local eta=0
-    if [ "$done_n" -gt 0 ]; then eta=$(( elapsed * (total - done_n) / done_n )); fi
-    printf '{"done": %d, "total": %d, "elapsed_s": %d, "eta_s": %d, "current": "%s", "raw": "%s", "updated": "%s"}\n' \
-        "$done_n" "$total" "$elapsed" "$eta" "$1" "$raw" "$(date -Is)" > "$status"
+    if [ "$measured_n" -gt 0 ]; then eta=$(( elapsed * (total - done_n) / measured_n )); fi
+    printf '{"done": %d, "total": %d, "measured": %d, "elapsed_s": %d, "eta_s": %d, "current": "%s", "raw": "%s", "updated": "%s"}\n' \
+        "$done_n" "$total" "$measured_n" "$elapsed" "$eta" "$1" "$raw" "$(date -Is)" > "$status.tmp"
+    mv -f "$status.tmp" "$status"
 }
 
 for p in "${points[@]}"; do
@@ -117,24 +158,29 @@ for p in "${points[@]}"; do
         fi
         case "$rung" in
             fastzonal-serial)
-                "$fz_bench" "$fxdir" "$op" "$zones" "$raster" ${den:+--den "$den"} --backend serial --reps "$reps" --out "$raw" > /dev/null ;;
+                "$fz_bench" "$fxdir" "$op" "$zones" "$raster" ${den:+--den "$den"} --backend serial --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
             fastzonal-openmp)
-                "$fz_bench" "$fxdir" "$op" "$zones" "$raster" ${den:+--den "$den"} --backend openmp --threads "$threads" --reps "$reps" --out "$raw" > /dev/null ;;
+                "$fz_bench" "$fxdir" "$op" "$zones" "$raster" ${den:+--den "$den"} --backend openmp --threads "$threads" --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
             *)
-                dotnet "$fzbench_dll" bench "$fxdir" "$rung" "$op" "$zones" "$raster" ${den:+--den "$den"} --threads "$threads" --reps "$reps" --out "$raw" > /dev/null ;;
+                dotnet "$fzbench_dll" bench "$fxdir" "$rung" "$op" "$zones" "$raster" ${den:+--den "$den"} --threads "$threads" --band-rows "$band_rows" --reps "$reps" --out "$raw" > /dev/null ;;
         esac
-        done_n=$((done_n + 1))
+        done_n=$((done_n + 1)); measured_n=$((measured_n + 1))
         write_status "$label"
     done
-    # checksum guard: every rung of this workload must agree with the baseline (relative 1e-6)
+    # checksum guard: every repetition of every rung of this workload must agree with the
+    # baseline (relative 1e-6; non-finite values never pass)
     python3 - "$raw" "$fx" "$op" "$zones" "$raster" "$den" <<'EOF'
-import csv, sys
+import csv, math, sys
 raw, fx, op, zones, raster, den = sys.argv[1:7]
 rows = [r for r in csv.DictReader(open(raw, newline="")) if (r["fixture"], r["op"], r["zones"], r["raster"], r["den"]) == (fx, op, zones, raster, den)]
 base = [float(r["checksum"]) for r in rows if r["rung"] == "csharp-baseline"]
-if not base: sys.exit(0)
+if not base:
+    print(f"no baseline for {fx} {op} {zones} {raster} {den}", file=sys.stderr); sys.exit(3)
 b = base[0]
-bad = [(r["rung"], r["threads"], r["checksum"]) for r in rows if abs(float(r["checksum"]) - b) > 1e-6 * max(1.0, abs(b))]
+if not math.isfinite(b):
+    print(f"non-finite baseline checksum for {fx} {op} {zones} {raster} {den}", file=sys.stderr); sys.exit(3)
+bad = [(r["rung"], r["threads"], r["rep"], r["checksum"]) for r in rows
+       if not math.isfinite(float(r["checksum"])) or abs(float(r["checksum"]) - b) > 1e-6 * max(1.0, abs(b))]
 if bad:
     print(f"checksum mismatch for {fx} {op} {zones} {raster} {den}: baseline {b!r}, offenders {bad}", file=sys.stderr)
     sys.exit(3)

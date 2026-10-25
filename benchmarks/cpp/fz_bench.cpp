@@ -18,8 +18,11 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <thread>
 #include <vector>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "fixture_io.hpp"
 
@@ -27,7 +30,7 @@ namespace {
 
 struct Args {
     std::string fixture, op, zones, raster, den, backend = "openmp", out = "results.csv";
-    int threads = 0, reps = 5, band_rows = 64;
+    int threads = 0, reps = 5, band_rows = 16;
 };
 
 int usage() {
@@ -95,23 +98,31 @@ int main(int argc, char** argv) {
     opt.threads = serial ? 1 : a.threads;
     opt.raster_mode = FZ_RASTER_COMPAT;
     opt.band_rows = a.band_rows;
-    int effective_threads = 1;
-    if (!serial) {
-        effective_threads = a.threads;
-        if (effective_threads <= 0) {
-#ifdef _OPENMP
-            effective_threads = static_cast<int>(std::thread::hardware_concurrency());
-#else
-            effective_threads = 1;
-#endif
-        }
-    }
-
     const fzio::Raster raster = fzio::read_raster(a.fixture, a.raster);
     const fzio::Zones zones = fzio::read_zones(a.fixture, a.zones);
     const fzio::Centroids centroids = fzio::read_centroids(a.fixture, a.zones, a.raster, zones.n_zones);
+    if (a.op != "rasterize" && centroids.empty()) {
+        std::cerr << "no centroid file for " << a.zones << " on " << a.raster << "; the reference fallback needs it\n";
+        return 2;
+    }
     const int32_t* crow = centroids.empty() ? nullptr : centroids.rows.data();
     const int32_t* ccol = centroids.empty() ? nullptr : centroids.cols.data();
+    // requested threads go to the CSV as `threads`; the workers the library can use (never more
+    // than bands) as `threads_eff`
+    int requested_threads = 1;
+    int effective_threads = 1;
+    if (!serial) {
+        requested_threads = a.threads;
+        if (requested_threads <= 0) {
+#ifdef _OPENMP
+            requested_threads = omp_get_max_threads();
+#else
+            requested_threads = 1;
+#endif
+        }
+        const int bands = (raster.height + a.band_rows - 1) / a.band_rows;
+        effective_threads = requested_threads < bands ? requested_threads : bands;
+    }
     const fz_shape shape{raster.width, raster.height};
     const fz_transform t = raster.transform;
     const size_t n = raster.pixels32.size();
@@ -134,15 +145,18 @@ int main(int argc, char** argv) {
         check(fz_rasterize(zones.xy.data(), zones.ring_start.data(), zones.ring_is_hole.data(), zones.ring_zone.data(),
                            zones.n_rings(), t, shape, mask.data(), &opt), "rasterize");
     }
-    std::vector<fz_stats> stats(static_cast<size_t>(nz));
-    std::vector<double> values(static_cast<size_t>(nz));
-    std::vector<uint8_t> has(static_cast<size_t>(nz));
-
     const std::string fixture_id = fzio::read_fixture_meta(a.fixture).id;
     const std::string rung = serial ? "fastzonal-serial" : "fastzonal-openmp";
+    const std::string tail = "," + a.zones + "," + a.raster + "," + (a.op == "ratio" ? a.den : "") + "," +
+                             std::to_string(nz) + "," + std::to_string(n) + "," + std::to_string(effective_threads) +
+                             "," + std::to_string(a.band_rows) + "\n";
     std::string lines;
     for (int rep = -1; rep < a.reps; ++rep) {
         double checksum = 0.0;
+        // output buffers are allocated inside the timed region, as the managed rungs allocate theirs
+        std::vector<fz_stats> stats;
+        std::vector<double> values;
+        std::vector<uint8_t> has;
         const auto t0 = std::chrono::steady_clock::now();
         if (a.op == "rasterize") {
             check(fz_rasterize(zones.xy.data(), zones.ring_start.data(), zones.ring_is_hole.data(),
@@ -153,14 +167,16 @@ int main(int argc, char** argv) {
                 const double s = std::chrono::duration<double>(t1 - t0).count();
                 char buf[64];
                 std::snprintf(buf, sizeof buf, "%.17g", s);
-                lines += fixture_id + "," + a.op + "," + rung + "," + std::to_string(effective_threads) + "," +
+                lines += fixture_id + "," + a.op + "," + rung + "," + std::to_string(requested_threads) + "," +
                          std::to_string(rep) + "," + buf + ",";
                 std::snprintf(buf, sizeof buf, "%.17g", checksum);
-                lines += std::string(buf) + "," + a.zones + "," + a.raster + ",," + std::to_string(nz) + "," +
-                         std::to_string(n) + "\n";
+                lines += std::string(buf) + tail;
             }
             continue;
         }
+        stats.resize(static_cast<size_t>(nz));
+        values.resize(static_cast<size_t>(nz));
+        has.resize(static_cast<size_t>(nz));
         if (a.op == "mean") {
             check(fz_zonal_f32(raster.pixels32.data(), mask.data(), shape, nz, -9999.0f, stats.data(), &opt), "zonal");
             check(fz_zonal_mean_fallback_f32(raster.pixels32.data(), shape, -9999.0f, stats.data(), nz, crow, ccol,
@@ -182,9 +198,11 @@ int main(int argc, char** argv) {
                 const int32_t r = crow[z], c = ccol[z];
                 if (r < 0 || r >= shape.height || c < 0 || c >= shape.width) continue;
                 const size_t i = static_cast<size_t>(r) * shape.width + c;
-                const float x = raster.pixels32[i], y = den_on_grid[i];
-                if (std::isnan(x) || x == -9999.0f || std::isnan(y) || y == -9999.0f || std::fabs(y) < 1e-12) continue;
-                values[z] = static_cast<double>(x) / y;
+                const double x = raster.pixels32[i], y = den_on_grid[i];
+                if (std::isnan(x) || x == -9999.0 || std::isnan(y) || y == -9999.0 || std::fabs(y) < 1e-12) continue;
+                const double q = x / y;
+                if (std::isnan(q) || q == -9999.0) continue;  // the reference filters the computed ratio too
+                values[z] = q;
             }
         } else {
             return usage();
@@ -192,14 +210,17 @@ int main(int argc, char** argv) {
         const auto t1 = std::chrono::steady_clock::now();
         checksum = sum_of(values);
         if (rep < 0) continue;
+        if (!std::isfinite(checksum)) {
+            std::cerr << "non-finite checksum for " << a.op << "\n";
+            return 2;
+        }
         const double s = std::chrono::duration<double>(t1 - t0).count();
         char buf[64];
         std::snprintf(buf, sizeof buf, "%.17g", s);
-        lines += fixture_id + "," + a.op + "," + rung + "," + std::to_string(effective_threads) + "," +
+        lines += fixture_id + "," + a.op + "," + rung + "," + std::to_string(requested_threads) + "," +
                  std::to_string(rep) + "," + buf + ",";
         std::snprintf(buf, sizeof buf, "%.17g", checksum);
-        lines += std::string(buf) + "," + a.zones + "," + a.raster + "," + (a.op == "ratio" ? a.den : "") + "," +
-                 std::to_string(nz) + "," + std::to_string(n) + "\n";
+        lines += std::string(buf) + tail;
     }
 
     bool has_header = false;
@@ -208,7 +229,8 @@ int main(int argc, char** argv) {
         has_header = probe.good() && probe.tellg() > 0;
     }
     std::ofstream out(a.out, std::ios::app);
-    if (!has_header) out << "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells\n";
+    if (!has_header)
+        out << "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows\n";
     out << lines;
     std::cout << lines;
     return 0;

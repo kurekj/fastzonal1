@@ -65,7 +65,7 @@ public class FixtureTests
         var ratio = rung.Ratio(f, "rect", "synth", prepared, mask);
         Assert.Equal(50, ratio.Length);
         foreach (var v in ratio) Assert.True(v == 0.0 || Math.Abs(v - 1.0) < 1e-12);
-        Assert.Equal(1, rung.EffectiveThreads);
+        Assert.Equal(1, rung.EffectiveThreads(200));
     }
 
     private static string RepoRoot()

@@ -33,18 +33,19 @@ public static class Program
         Console.Error.WriteLine("usage:\n" +
             "  FzBench expected <fixtureDir> <outDir>\n" +
             "      writes <outDir>/<fixture>/<op>_<zones>_<raster>.csv for every zone set and raster\n" +
-            "  FzBench bench <fixtureDir> <rung> <op> <zones> <raster> [--den <raster>] [--threads T] [--reps R] [--out results.csv]\n" +
+            "  FzBench bench <fixtureDir> <rung> <op> <zones> <raster> [--den <raster>] [--threads T] [--reps R] [--band-rows B] [--out results.csv]\n" +
             "      rungs: csharp-baseline; ops: rasterize, mean, majority, ratio\n" +
-            "      one untimed warm-up precedes the R measured repetitions; the CSV records the threads the rung used");
+            "      one untimed warm-up precedes the R measured repetitions; the CSV records the requested threads and,\n" +
+            "      in threads_eff, the workers the rung could use on that raster (never more than bands)");
         return 1;
     }
 
-    public static IRung MakeRung(string name, int threads) => name switch
+    public static IRung MakeRung(string name, int threads, int bandRows = 16) => name switch
     {
         "csharp-baseline" => new BaselineRung(),
-        "csharp-optimised" => new OptimisedRung(threads),
-        "fastzonal-openmp" => new FastZonalRung(serial: false, threads),
-        "fastzonal-serial" => new FastZonalRung(serial: true, threads),
+        "csharp-optimised" => new OptimisedRung(threads, bandRows),
+        "fastzonal-openmp" => new FastZonalRung(serial: false, threads, bandRows),
+        "fastzonal-serial" => new FastZonalRung(serial: true, threads, bandRows),
         _ => throw new ArgumentException($"unknown rung {name}")
     };
 
@@ -98,7 +99,7 @@ public static class Program
         var zones = args[4];
         var raster = args[5];
         string den = raster;
-        int threads = 1, reps = 5;
+        int threads = 1, reps = 5, bandRows = 16;
         string outPath = "results.csv";
         for (int i = 6; i < args.Length; i++)
         {
@@ -107,12 +108,13 @@ public static class Program
                 case "--den": den = args[++i]; break;
                 case "--threads": threads = int.Parse(args[++i], Inv); break;
                 case "--reps": reps = int.Parse(args[++i], Inv); break;
+                case "--band-rows": bandRows = int.Parse(args[++i], Inv); break;
                 case "--out": outPath = args[++i]; break;
                 default: throw new ArgumentException($"unknown option {args[i]}");
             }
         }
         var f = Fixture.Load(fixtureDir);
-        var rung = MakeRung(rungName, threads);
+        var rung = MakeRung(rungName, threads, bandRows);
         var mask = op == "rasterize" ? null : rung.Rasterize(f, zones, raster);
         var denOnGrid = op == "ratio" ? Fixture.PrepareDenominator(f.Rasters[raster], f.Rasters[den]) : null;
         var lines = new StringBuilder();
@@ -155,14 +157,16 @@ public static class Program
                     throw new ArgumentException($"unknown op {op}");
             }
             if (rep < 0) continue;  // warm-up
+            if (!double.IsFinite(checksum)) throw new InvalidDataException($"non-finite checksum for {op}");
             var zcount = f.Zones[zones].ZoneCount;
             var r = f.Rasters[raster];
-            lines.Append(string.Join(",", f.Id, op, rung.Name, rung.EffectiveThreads.ToString(Inv), rep.ToString(Inv),
+            lines.Append(string.Join(",", f.Id, op, rung.Name, threads.ToString(Inv), rep.ToString(Inv),
                 sw.Elapsed.TotalSeconds.ToString("G17", Inv), checksum.ToString("G17", Inv),
                 zones, raster, op == "ratio" ? den : "", zcount.ToString(Inv),
-                ((long)r.Width * r.Height).ToString(Inv))).Append('\n');
+                ((long)r.Width * r.Height).ToString(Inv), rung.EffectiveThreads(r.Height).ToString(Inv),
+                bandRows.ToString(Inv))).Append('\n');
         }
-        var header = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells\n";
+        var header = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows\n";
         if (!File.Exists(outPath) || new FileInfo(outPath).Length == 0)
             File.WriteAllText(outPath, header, new UTF8Encoding(false));
         File.AppendAllText(outPath, lines.ToString(), new UTF8Encoding(false));

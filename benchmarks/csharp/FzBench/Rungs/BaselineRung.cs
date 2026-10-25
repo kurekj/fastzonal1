@@ -7,7 +7,7 @@ public sealed class BaselineRung : IRung
 {
     public string Name => "csharp-baseline";
 
-    public int EffectiveThreads => 1;
+    public int EffectiveThreads(int height) => 1;
 
     public object Rasterize(Fixture f, string zones, string raster)
     {

@@ -6,6 +6,7 @@
 #
 # The conda environment comes from conda-lock.yml (generated from environment.yml), so every
 # Python and toolchain package is pinned; the .NET SDK comes from Microsoft's package feed.
+# A tag rather than a digest: pin the digest with `docker pull` output before a release.
 FROM condaforge/miniforge3:25.3.1-0
 
 ENV DEBIAN_FRONTEND=noninteractive

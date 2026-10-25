@@ -4,22 +4,24 @@ using NetTopologySuite.Geometries;
 namespace FzBench.Rungs;
 
 /// <summary>The reference algorithms rewritten the way a careful C# developer would: float[]
-/// rasters, int[] masks, no per-row allocations, and Parallel.For over bands of 64 rows with
-/// thread-local accumulators. Same semantics as the baseline (COMPAT rasterisation, NoData
-/// -9999 or NaN, centroid fallback, smallest-value ties); the floating-point summation order
-/// differs from the baseline, so means agree to rounding, not bit for bit.</summary>
+/// rasters, int[] masks, no per-row allocations, and Parallel.For over bands of rows with
+/// per-band partial results merged in ascending band order, so the result does not depend on
+/// the thread count. Same semantics as the baseline (COMPAT rasterisation, NoData -9999 or NaN,
+/// centroid fallback, smallest-value ties); the summation order differs from the baseline's
+/// single sequential pass, so means agree to rounding, not bit for bit.</summary>
 public sealed class OptimisedRung : IRung
 {
-    private const int BandRows = 64;
+    private readonly int _bandRows;
     private readonly int _threads;
 
-    public OptimisedRung(int threads)
+    public OptimisedRung(int threads, int bandRows = 16)
     {
         _threads = threads <= 0 ? Environment.ProcessorCount : threads;
+        _bandRows = bandRows;
     }
 
     public string Name => "csharp-optimised";
-    public int EffectiveThreads => _threads;
+    public int EffectiveThreads(int height) => Math.Min(_threads, (height + _bandRows - 1) / _bandRows);
 
     private ParallelOptions Par => new() { MaxDegreeOfParallelism = _threads };
 
@@ -40,20 +42,20 @@ public sealed class OptimisedRung : IRung
         int width = r.Width, height = r.Height;
         var rings = PrepareRings(f.Zones[zones].Geometries, t, width, height);
         var mask = new int[(long)width * height];
-        int nBands = (height + BandRows - 1) / BandRows;
-        // rings sorted by zone index already (they are produced in geometry order); every band
-        // applies the rings touching it in that order, so later polygons win as in the reference
+        int nBands = (height + _bandRows - 1) / _bandRows;
+        // every band applies, in polygon order, the rings whose row range touches it, so later
+        // polygons win exactly as in the reference
         var byBand = new List<int>[nBands];
         for (int b = 0; b < nBands; b++) byBand[b] = new List<int>();
         for (int i = 0; i < rings.Count; i++)
         {
             var p = rings[i];
             if (p.StartRow > p.EndRow) continue;
-            for (int b = p.StartRow / BandRows; b <= p.EndRow / BandRows && b < nBands; b++) byBand[b].Add(i);
+            for (int b = p.StartRow / _bandRows; b <= p.EndRow / _bandRows && b < nBands; b++) byBand[b].Add(i);
         }
         Parallel.For(0, nBands, Par, () => new List<double>(64), (b, _, crossings) =>
         {
-            int row0 = b * BandRows, row1 = Math.Min(height, row0 + BandRows);
+            int row0 = b * _bandRows, row1 = Math.Min(height, row0 + _bandRows);
             Array.Fill(mask, -1, row0 * width, (row1 - row0) * width);
             foreach (int i in byBand[b])
             {
@@ -125,72 +127,89 @@ public sealed class OptimisedRung : IRung
 
     // ---- reductions ------------------------------------------------------------------------
 
-    /// <summary>Thread-local accumulators plus the list of zones this thread touched, so the merge
-    /// under the lock visits only those zones instead of all n for every thread.</summary>
+    /// <summary>Thread-local dense accumulators with a seen flag per zone; after every band the
+    /// touched zones are copied out as that band's partial and the accumulators are reset.</summary>
     private sealed class Acc
     {
         public readonly double[] Sum;
         public readonly long[] Count;
+        public readonly bool[] Seen;
         public readonly List<int> Touched = new();
-        public Acc(int n) { Sum = new double[n]; Count = new long[n]; }
+        public Acc(int n) { Sum = new double[n]; Count = new long[n]; Seen = new bool[n]; }
+
+        public void Touch(int zone)
+        {
+            if (Seen[zone]) return;
+            Seen[zone] = true;
+            Touched.Add(zone);
+        }
+
+        public (int[] Zones, double[] Sum, long[] Count) Flush()
+        {
+            var zones = Touched.ToArray();
+            var sum = new double[zones.Length];
+            var count = new long[zones.Length];
+            for (int i = 0; i < zones.Length; i++)
+            {
+                int z = zones[i];
+                sum[i] = Sum[z];
+                count[i] = Count[z];
+                Sum[z] = 0.0;
+                Count[z] = 0;
+                Seen[z] = false;
+            }
+            Touched.Clear();
+            return (zones, sum, count);
+        }
     }
 
     private static bool IsNoData(float v) => float.IsNaN(v) || v == -9999f;
+    private static bool IsNoData(double v) => double.IsNaN(v) || v == -9999.0;
 
     public double[] Mean(Fixture f, string zones, string raster, object mask)
     {
         var r = f.Rasters[raster];
         var z = f.Zones[zones];
-        return MeanOf(r.Flat, (int[])mask, r.Width, r.Height, z, r.Transform, i => r.Flat[i]);
+        return MeanOf(i => r.Flat[i], IsNoDataAt: i => IsNoData(r.Flat[i]), (int[])mask, r.Width, r.Height, z,
+            r.Transform);
     }
 
-    private double[] MeanOf(float[] values, int[] mask, int width, int height, ZoneData z, GeoTransform t,
-        Func<long, float> sampleAt)
+    private double[] MeanOf(Func<long, double> valueAt, Func<long, bool> IsNoDataAt, int[] mask, int width, int height,
+        ZoneData z, GeoTransform t)
     {
         int n = z.ZoneCount;
-        var total = new Acc(n);
-        var gate = new object();
-        int nBands = (height + BandRows - 1) / BandRows;
+        int nBands = (height + _bandRows - 1) / _bandRows;
+        var partials = new (int[] Zones, double[] Sum, long[] Count)[nBands];
         Parallel.For(0, nBands, Par, () => new Acc(n), (b, _, acc) =>
         {
-            long begin = (long)b * BandRows * width;
-            long end = Math.Min((long)height, (long)(b + 1) * BandRows) * width;
+            long begin = (long)b * _bandRows * width;
+            long end = Math.Min((long)height, (long)(b + 1) * _bandRows) * width;
             int prev = -1;
             for (long i = begin; i < end; i++)
             {
                 int zone = mask[i];
                 if (zone < 0) continue;
-                if (zone != prev)
-                {
-                    if (acc.Count[zone] == 0 && acc.Sum[zone] == 0.0) acc.Touched.Add(zone);
-                    prev = zone;
-                }
-                float v = values[i];
-                if (IsNoData(v)) continue;
-                acc.Sum[zone] += v;
+                if (zone != prev) { acc.Touch(zone); prev = zone; }
+                if (IsNoDataAt(i)) continue;
+                acc.Sum[zone] += valueAt(i);
                 acc.Count[zone]++;
             }
+            partials[b] = acc.Flush();
             return acc;
-        }, acc =>
-        {
-            lock (gate)
-                foreach (int zone in acc.Touched)
-                {
-                    total.Sum[zone] += acc.Sum[zone];
-                    total.Count[zone] += acc.Count[zone];
-                    acc.Sum[zone] = 0.0;
-                    acc.Count[zone] = 0;
-                }
-        });
+        }, _ => { });
+        var total = new double[n];
+        var counts = new long[n];
+        foreach (var (zs, sums, cs) in partials)  // ascending band order: the fixed merge order
+            for (int i = 0; i < zs.Length; i++) { total[zs[i]] += sums[i]; counts[zs[i]] += cs[i]; }
         var result = new double[n];
         for (int zone = 0; zone < n; zone++)
         {
-            if (total.Count[zone] > 0) { result[zone] = total.Sum[zone] / total.Count[zone]; continue; }
+            if (counts[zone] > 0) { result[zone] = total[zone] / counts[zone]; continue; }
             var centroid = z.Geometries[zone].Centroid;
             int col = t.WorldToCol(centroid.X), row = t.WorldToRow(centroid.Y);
             if (col < 0 || col >= width || row < 0 || row >= height) continue;
-            float cv = sampleAt((long)row * width + col);
-            if (!IsNoData(cv)) result[zone] = cv;
+            long idx = (long)row * width + col;
+            if (!IsNoDataAt(idx)) result[zone] = valueAt(idx);
         }
         return result;
     }
@@ -201,33 +220,36 @@ public sealed class OptimisedRung : IRung
         var z = f.Zones[zones];
         var m = (int[])mask;
         int n = z.ZoneCount, width = r.Width, height = r.Height;
-        var merged = new Dictionary<float, int>?[n];
-        var gate = new object();
-        int nBands = (height + BandRows - 1) / BandRows;
+        int nBands = (height + _bandRows - 1) / _bandRows;
+        var partials = new List<(int Zone, Dictionary<float, int> Counts)>[nBands];
         Parallel.For(0, nBands, Par, () => new Dictionary<float, int>?[n], (b, _, local) =>
         {
-            long begin = (long)b * BandRows * width;
-            long end = Math.Min((long)height, (long)(b + 1) * BandRows) * width;
+            long begin = (long)b * _bandRows * width;
+            long end = Math.Min((long)height, (long)(b + 1) * _bandRows) * width;
+            var touched = new List<int>();
             for (long i = begin; i < end; i++)
             {
                 int zone = m[i];
                 if (zone < 0) continue;
                 float v = r.Flat[i];
                 if (IsNoData(v)) continue;
-                var d = local[zone] ??= new Dictionary<float, int>();
+                var d = local[zone];
+                if (d == null) { d = local[zone] = new Dictionary<float, int>(); touched.Add(zone); }
                 d[v] = d.TryGetValue(v, out var c) ? c + 1 : 1;
             }
+            var part = new List<(int, Dictionary<float, int>)>(touched.Count);
+            foreach (int zone in touched) { part.Add((zone, local[zone]!)); local[zone] = null; }
+            partials[b] = part;
             return local;
-        }, local =>
-        {
-            lock (gate)
-                for (int zone = 0; zone < n; zone++)
-                {
-                    if (local[zone] == null) continue;
-                    var d = merged[zone] ??= new Dictionary<float, int>();
-                    foreach (var (v, c) in local[zone]!) d[v] = d.TryGetValue(v, out var old) ? old + c : c;
-                }
-        });
+        }, _ => { });
+        var merged = new Dictionary<float, int>?[n];
+        foreach (var part in partials)  // integer counts commute; band order kept for clarity
+            foreach (var (zone, counts) in part)
+            {
+                var d = merged[zone];
+                if (d == null) { merged[zone] = counts; continue; }
+                foreach (var (v, c) in counts) d[v] = d.TryGetValue(v, out var old) ? old + c : c;
+            }
         var result = new double[n];
         for (int zone = 0; zone < n; zone++)
         {
@@ -254,19 +276,21 @@ public sealed class OptimisedRung : IRung
         var a = f.Rasters[num];
         var z = f.Zones[zones];
         int width = a.Width, height = a.Height;
-        var ratio = new float[(long)width * height];
-        var bf = denOnGrid.Flat;
+        // the ratio raster in double, as the reference forms it (NaN where excluded, and a
+        // computed -9999 is then NoData for the mean, exactly like the reference)
+        var ratio = new double[(long)width * height];
+        var bp = denOnGrid.Pixels;
         Parallel.For(0, height, Par, row =>
         {
             long rowBase = (long)row * width;
             for (int col = 0; col < width; col++)
             {
                 long i = rowBase + col;
-                float x = a.Flat[i], y = bf[i];
-                ratio[i] = (IsNoData(x) || IsNoData(y) || Math.Abs(y) < 1e-12) ? float.NaN : x / y;
+                double x = a.Pixels[row, col], y = bp[row, col];
+                ratio[i] = (IsNoData(x) || IsNoData(y) || Math.Abs(y) < 1e-12) ? double.NaN : x / y;
             }
         });
-        return MeanOf(ratio, (int[])mask, width, height, z, a.Transform, i => ratio[i]);
+        return MeanOf(i => ratio[i], i => IsNoData(ratio[i]), (int[])mask, width, height, z, a.Transform);
     }
 
     public int[] MaskToArray(object mask) => (int[])mask;

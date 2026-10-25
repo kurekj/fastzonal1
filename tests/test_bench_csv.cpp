@@ -1,5 +1,6 @@
 // The C++ benchmark driver must append exactly `reps` well-formed CSV lines per invocation.
 #include <catch2/catch_test_macros.hpp>
+#include <fastzonal/fastzonal.h>
 
 #include <cstdlib>
 #include <filesystem>
@@ -32,15 +33,19 @@ TEST_CASE("fz_bench appends reps lines with the shared columns") {
     const fs::path fixture = fs::path(FZ_FIXTURE_DIR) / "synthetic_small";
     const fs::path out = fs::temp_directory_path() / "fz_bench_test_results.csv";
     fs::remove(out);
-    const std::string cmd = std::string("\"") + FZ_BENCH_EXE + "\" \"" + fixture.string() +
-                            "\" mean rect synth --backend openmp --threads 2 --reps 3 --out \"" + out.string() + "\"";
+    const bool omp = fz_has_openmp() != 0;
+    const std::string backend = omp ? "openmp" : "serial";
+    const std::string cmd = std::string("\"") + FZ_BENCH_EXE + "\" \"" + fixture.string() + "\" mean rect synth --backend " +
+                            backend + " --threads 2 --reps 3 --out \"" + out.string() + "\"";
     REQUIRE(std::system(cmd.c_str()) == 0);
     auto l = lines_of(out);
     REQUIRE(l.size() == 4);  // header + 3 reps
-    REQUIRE(l[0] == "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells");
+    REQUIRE(l[0] == "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells,threads_eff,band_rows");
     for (size_t i = 1; i < l.size(); ++i) {
-        REQUIRE(fields(l[i]) == 12);
-        REQUIRE(l[i].rfind("synthetic_small,mean,fastzonal-openmp,2,", 0) == 0);
+        REQUIRE(fields(l[i]) == 14);
+        REQUIRE(l[i].rfind(omp ? "synthetic_small,mean,fastzonal-openmp,2," : "synthetic_small,mean,fastzonal-serial,1,", 0) == 0);
+        // the synthetic raster has 200 rows: 13 bands of 16, so two requested threads are two effective ones
+        REQUIRE(l[i].find(omp ? ",2,16" : ",1,16") != std::string::npos);
     }
     // a second call appends without repeating the header
     REQUIRE(std::system(cmd.c_str()) == 0);

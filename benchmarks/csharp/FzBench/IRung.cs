@@ -8,8 +8,9 @@ public interface IRung
 {
     string Name { get; }
 
-    /// <summary>Threads the rung actually used in its last call (the baseline is always 1).</summary>
-    int EffectiveThreads { get; }
+    /// <summary>Workers the rung can actually use on a raster of this height (the library and the
+    /// optimised rung never use more workers than bands; the baseline is always 1).</summary>
+    int EffectiveThreads(int height);
 
     /// <summary>Rasterises the zone set onto the raster's grid and returns the rung-native mask.</summary>
     object Rasterize(Fixture f, string zones, string raster);

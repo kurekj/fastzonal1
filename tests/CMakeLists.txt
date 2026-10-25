@@ -46,7 +46,7 @@ catch_discover_tests(fz_parity TEST_PREFIX "parity: ")
 
 if(FASTZONAL_BUILD_BENCH)
     add_executable(fz_bench_test test_bench_csv.cpp)
-    target_link_libraries(fz_bench_test PRIVATE Catch2::Catch2WithMain)
+    target_link_libraries(fz_bench_test PRIVATE fastzonal Catch2::Catch2WithMain)
     target_compile_features(fz_bench_test PRIVATE cxx_std_17)
     target_compile_definitions(fz_bench_test PRIVATE
         FZ_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures" FZ_BENCH_EXE="$<TARGET_FILE:fz_bench>")

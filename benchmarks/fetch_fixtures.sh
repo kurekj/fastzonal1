@@ -31,18 +31,25 @@ if tar --help 2>/dev/null | grep -q zstd; then
 else
     zstd -dc "$archive" | tar -xf - -C "$dest"
 fi
-# verify every file listed in the manifest
+# verify every file listed in the manifest: fixtures, the baseline's expected outputs and the
+# generated fixtures (all land under benchmarks/fixtures/<name>/ or benchmarks/fixtures/expected/<name>/)
 python3 - "$manifest" "$dest" <<'EOF'
 import hashlib, json, sys
 from pathlib import Path
-manifest = json.load(open(sys.argv[1])); dest = Path(sys.argv[2]); bad = 0
-for fid, entry in manifest["fixtures"].items():
-    for name, info in entry["files"].items():
-        p = dest / fid / name
+manifest = json.load(open(sys.argv[1])); dest = Path(sys.argv[2]); bad = 0; n = 0
+def check(dir_path, files):
+    global bad, n
+    for name, info in files.items():
+        p = dir_path / name; n += 1
         if not p.exists():
             print(f"missing {p}"); bad += 1; continue
-        h = hashlib.sha256(p.read_bytes()).hexdigest()
-        if h != info["sha256"]:
+        if hashlib.sha256(p.read_bytes()).hexdigest() != info["sha256"]:
             print(f"hash mismatch {p}"); bad += 1
-print("fixtures verified" if not bad else f"{bad} problems"); sys.exit(1 if bad else 0)
+for fid, entry in manifest.get("fixtures", {}).items():
+    check(dest / fid, entry["files"])
+for fid, entry in manifest.get("expected", {}).items():
+    check(dest / "expected" / fid, entry["files"])
+for fid, entry in manifest.get("generated", {}).items():
+    check(dest / fid, entry["files"])
+print(f"{n} files verified" if not bad else f"{bad} problems in {n} files"); sys.exit(1 if bad else 0)
 EOF

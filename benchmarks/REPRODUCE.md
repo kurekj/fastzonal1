@@ -16,15 +16,15 @@ copy of the archive: `FZ_FIXTURE_ARCHIVE=/path/fixtures-v1.tar.zst bash benchmar
 
 ## 2. Build the environment
 
-Either the pinned conda environment (`conda-lock install -n fastzonal conda-lock.yml`, then
-`conda activate fastzonal`) or the Docker image:
+The reproduction platform is Linux x86-64. Two routes:
 
-```bash
-docker build -t fastzonal:bench .
-```
-
-The image builds the library with OpenMP, runs the C++, .NET and Python test suites, and has
-`benchmarks/run_all.sh` as its entry point. CUDA is not part of the image.
+- **conda**: `conda-lock install -n fastzonal conda-lock.yml && conda activate fastzonal` gives
+  the pinned C++ toolchain (GCC 13), CMake, Ninja, GDAL and every Python package. The .NET 10 SDK
+  is not a conda package: install it from Microsoft's package feed or with the `dotnet-install.sh`
+  script (`--channel 10.0`), and make sure `dotnet` is on `PATH`.
+- **Docker**: `docker build -t fastzonal:bench .` builds the image from the same lock file, adds
+  the .NET SDK, builds the library with OpenMP and runs the C++, .NET and Python test suites.
+  CUDA is not part of the image.
 
 ## 3. Check parity before measuring
 
@@ -42,10 +42,23 @@ bash benchmarks/run_all.sh             # the published matrix: five repetitions,
 bash benchmarks/status.sh              # progress, elapsed, ETA
 ```
 
-The runner is resumable (points already in the raw CSV are skipped), writes
+The runner is resumable with `--stamp <stamp>` (points whose repetitions are all in the raw
+CSV are skipped; a resumed stamp refuses a different commit, machine or settings), writes
 `benchmarks/results/raw_<stamp>.csv` and `env_<stamp>.json`, and stops with an error when a
 rung's checksum differs from the baseline's for the same workload. On a machine with fewer
-cores, pass `--threads "1 2 4 8"` with the counts available.
+cores, pass `--threads "1 2 4 8"` with the counts available. The band size is 16 rows
+(`--band-rows`); it is recorded in every CSV line because it fixes the summation order.
+
+With Docker, mount the fixtures and a results directory so the measurements survive the
+container:
+
+```bash
+docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures"     -v "$PWD/benchmarks/results:/work/benchmarks/results" fastzonal:bench --quick
+docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures"     -v "$PWD/benchmarks/results:/work/benchmarks/results" fastzonal:bench
+# parity and the tables from inside the image:
+docker run --rm -v "$PWD/benchmarks/fixtures:/work/benchmarks/fixtures" --entrypoint bash fastzonal:bench -c     'FZ_PARITY_FIXTURE_DIR=benchmarks/fixtures FZ_PARITY_EXPECTED_DIR=benchmarks/fixtures/expected build/release/tests/fz_parity'
+docker run --rm -v "$PWD/benchmarks/results:/work/benchmarks/results" -v "$PWD/paper_assets:/work/paper_assets"     --entrypoint python fastzonal:bench benchmarks/make_paper_assets.py --raw 'benchmarks/results/raw_*.csv' --out paper_assets
+```
 
 ## 5. Make the tables and figures
 
@@ -57,4 +70,6 @@ python benchmarks/make_paper_assets.py --raw benchmarks/results/raw_<stamp>.csv 
 comparison); `tables/*.tex` are the fragments the manuscript inputs; `figures/*.png` the plots.
 
 Expected wall time of the full matrix on the reference machine (2x Xeon Gold 5420+, 112
-threads): about ten minutes. The reference raw files are committed under `benchmarks/results/`.
+threads): about ten minutes. The reference raw and environment files are committed under
+`benchmarks/results/` and the assets built from them under `paper_assets/`; the commit that
+produced them is recorded in the environment file.
