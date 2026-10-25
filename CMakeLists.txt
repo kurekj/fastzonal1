@@ -68,6 +68,12 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fastzonalConfig.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/fastzonalConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/fastzonal)
 
+# Fixture reader shared by the parity tests and the benchmark driver (not installed).
+add_library(fz_fixture_io STATIC src/tools/fixture_io.cpp)
+target_include_directories(fz_fixture_io PUBLIC src/tools)
+target_link_libraries(fz_fixture_io PUBLIC fastzonal)
+target_compile_features(fz_fixture_io PUBLIC cxx_std_17)
+
 if(FASTZONAL_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)

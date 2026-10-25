@@ -31,3 +31,15 @@ if(FASTZONAL_WITH_OPENMP AND OpenMP_CXX_FOUND)
 endif()
 
 catch_discover_tests(fz_tests)
+
+# Parity with the C# baseline on fixtures. The fixture root is compiled in; the environment
+# variables FZ_PARITY_FIXTURE_DIR / FZ_PARITY_EXPECTED_DIR point the same binary at a larger set.
+add_executable(fz_parity parity/test_parity.cpp)
+target_link_libraries(fz_parity PRIVATE fastzonal fz_fixture_io Catch2::Catch2WithMain)
+target_compile_features(fz_parity PRIVATE cxx_std_17)
+target_compile_definitions(fz_parity PRIVATE FZ_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
+if(WIN32)
+    add_custom_command(TARGET fz_parity POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fastzonal> $<TARGET_FILE_DIR:fz_parity>)
+endif()
+catch_discover_tests(fz_parity TEST_PREFIX "parity: ")
