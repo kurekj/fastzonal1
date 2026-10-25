@@ -163,7 +163,8 @@ public static class Program
                 ((long)r.Width * r.Height).ToString(Inv))).Append('\n');
         }
         var header = "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells\n";
-        if (!File.Exists(outPath)) File.WriteAllText(outPath, header, new UTF8Encoding(false));
+        if (!File.Exists(outPath) || new FileInfo(outPath).Length == 0)
+            File.WriteAllText(outPath, header, new UTF8Encoding(false));
         File.AppendAllText(outPath, lines.ToString(), new UTF8Encoding(false));
         Console.Write(lines.ToString());
         return 0;

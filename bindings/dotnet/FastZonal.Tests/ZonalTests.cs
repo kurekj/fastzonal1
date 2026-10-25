@@ -111,7 +111,31 @@ public class ZonalTests
             .Select(l => double.Parse(l.Split(',')[1], CultureInfo.InvariantCulture)).ToArray();
         Assert.Equal(expected.Length, mean.Length);
         for (int z = 0; z < expected.Length; z++)
-            Assert.True(Math.Abs(mean[z] - expected[z]) <= 1e-6 * Math.Max(1.0, Math.Abs(expected[z])),
+            Assert.True(Math.Abs(mean[z] - expected[z]) <= 1e-9 * Math.Max(1.0, Math.Abs(expected[z])),
                 $"zone {z}: {mean[z]} vs {expected[z]}");
+    }
+}
+
+public class RasterizerValidationTests
+{
+    [Fact]
+    public void EveryRingOffsetIsValidatedBeforeNativeCode()
+    {
+        double[] xy = { 0, 0, 2, 0, 2, 2, 0, 2, 5, 5, 6, 6 };  // six points
+        byte[] holes = { 0, 0 };
+        int[] zones = { 0, 1 };
+        var t = new Transform(0, 10, 1, 1);
+        // decreasing second offset: the native code would read point 4 before noticing
+        Assert.Throws<ArgumentException>(() =>
+            Rasterizer.Rasterize(xy, new long[] { 0, 4, 3 }, holes, zones, t, 10, 10));
+        // offset beyond the coordinate array
+        Assert.Throws<ArgumentException>(() =>
+            Rasterizer.Rasterize(xy, new long[] { 0, 4, 7 }, holes, zones, t, 10, 10));
+        // negative first offset
+        Assert.Throws<ArgumentException>(() =>
+            Rasterizer.Rasterize(xy, new long[] { -1, 4, 6 }, holes, zones, t, 10, 10));
+        // the consistent layout still works
+        var mask = Rasterizer.Rasterize(xy, new long[] { 0, 4, 6 }, holes, zones, t, 10, 10);
+        Assert.Equal(100, mask.Length);
     }
 }

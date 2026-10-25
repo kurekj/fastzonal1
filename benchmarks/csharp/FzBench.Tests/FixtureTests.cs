@@ -75,3 +75,25 @@ public class FixtureTests
         return dir!.FullName;
     }
 }
+
+public class FixtureNoDataOrderTests
+{
+    [Fact]
+    public void IntegerNoDataIsRemappedBeforeTheExactnessCheck()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "fz_fixture_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "raster_a.json"),
+            "{\"dtype\": \"i32\", \"width\": 2, \"height\": 2, \"transform\": [0.0, 2.0, 1.0, 1.0], \"nodata\": -2147483648}\n");
+        var bin = new byte[16];
+        BitConverter.GetBytes(1).CopyTo(bin, 0);
+        BitConverter.GetBytes(2).CopyTo(bin, 4);
+        BitConverter.GetBytes(int.MinValue).CopyTo(bin, 8);
+        BitConverter.GetBytes(3).CopyTo(bin, 12);
+        File.WriteAllBytes(Path.Combine(dir, "raster_a.bin"), bin);
+        var r = Fixture.LoadRaster(dir, "a");
+        Assert.Equal(-9999.0, r.Pixels[1, 0]);
+        Assert.Equal(1.0, r.Pixels[0, 0]);
+        Directory.Delete(dir, true);
+    }
+}

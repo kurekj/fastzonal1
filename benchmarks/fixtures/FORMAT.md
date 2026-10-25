@@ -43,7 +43,10 @@ Conventions the harnesses rely on:
   reference application tests for `-9999` and NaN), so a valid data value of `-9999` is not
   representable. NaN cells are always excluded; a NaN `nodata` is written as `null`.
 - `i32` rasters hold class codes; their values must be below 2^24 so that the float32 copies used
-  by the C# harness are exact.
+  by the C# harness are exact. Integer NoData is remapped to `-9999` when a fixture is prepared.
+- The reference application also treats a *computed* ratio equal to `-9999` as NoData (it forms the
+  ratio raster first and then applies the sentinel test). The library's `fz_zonal_ratio_*` does not
+  reproduce that corner; no fixture contains such a quotient.
 
 `prepare_fixture.py` creates these files from a GeoTIFF and any GDAL-readable polygon layer and
 refuses inputs whose CRS differ. `make_synthetic.py` creates a download-free fixture.

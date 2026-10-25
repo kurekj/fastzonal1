@@ -44,15 +44,23 @@ def load_raster(path: Path):
         if t.b != 0 or t.d != 0 or t.e >= 0 or t.a <= 0:
             sys.exit(f"{path}: raster must be north-up with positive pixel sizes")
         data = src.read(1)
-        if data.dtype == np.float32:
-            pass
-        elif data.dtype == np.float64:
+        nodata = src.nodata
+        if data.dtype in (np.float32, np.float64):
             pass
         elif np.issubdtype(data.dtype, np.integer):
-            data = data.astype(np.int32)
+            # class codes: NoData becomes the reserved -9999 before narrowing, and every valid value
+            # must be exact in float32 (FORMAT.md), so nothing is silently changed
+            valid = np.ones(data.shape, dtype=bool) if nodata is None else data != data.dtype.type(nodata)
+            if valid.any():
+                lo, hi = int(data[valid].min()), int(data[valid].max())
+                if lo <= -(1 << 24) or hi >= (1 << 24):
+                    sys.exit(f"{path}: integer values must be below 2^24 in magnitude (found {lo}..{hi})")
+            out = np.full(data.shape, -9999, dtype=np.int32)
+            out[valid] = data[valid].astype(np.int32)
+            data, nodata = out, -9999
         else:
             sys.exit(f"{path}: unsupported dtype {data.dtype}")
-        return data, (t.c, t.f, t.a, -t.e), src.nodata, crs_key(src.crs)
+        return data, (t.c, t.f, t.a, -t.e), nodata, crs_key(src.crs)
 
 
 def load_zones(path: Path, zone_field: str | None):

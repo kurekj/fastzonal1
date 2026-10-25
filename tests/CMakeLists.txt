@@ -34,7 +34,7 @@ catch_discover_tests(fz_tests)
 
 # Parity with the C# baseline on fixtures. The fixture root is compiled in; the environment
 # variables FZ_PARITY_FIXTURE_DIR / FZ_PARITY_EXPECTED_DIR point the same binary at a larger set.
-add_executable(fz_parity parity/test_parity.cpp)
+add_executable(fz_parity parity/test_parity.cpp test_fixture_io.cpp)
 target_link_libraries(fz_parity PRIVATE fastzonal fz_fixture_io Catch2::Catch2WithMain)
 target_compile_features(fz_parity PRIVATE cxx_std_17)
 target_compile_definitions(fz_parity PRIVATE FZ_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")

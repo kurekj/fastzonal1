@@ -89,11 +89,10 @@ for t in $threads_list; do rungs+=("csharp-optimised|$t" "fastzonal-openmp|$t");
 total=$(( ${#points[@]} * ${#rungs[@]} ))
 done_n=0
 start=$(date +%s)
-touch "$raw"
 
 have() {  # fixture op rung threads zones raster den -> 0 when every rep is present
     local want="$1,$2,$3,$4,"; local pat; pat=$(printf '%s' "$want" | sed 's/[.[\*^$]/\\&/g')
-    local n; n=$(grep -c "^$pat[0-9]*,[^,]*,[^,]*,$5,$6,$7," "$raw" 2>/dev/null || true)
+    local n; n=$(grep -c "^$pat[0-9]*,[^,]*,[^,]*,$5,$6,$7," "$raw" 2>/dev/null || true); n=${n:-0}
     [ "$n" -ge "$reps" ]
 }
 

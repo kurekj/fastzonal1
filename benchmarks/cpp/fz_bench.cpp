@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
 
     const fzio::Raster raster = fzio::read_raster(a.fixture, a.raster);
     const fzio::Zones zones = fzio::read_zones(a.fixture, a.zones);
-    const fzio::Centroids centroids = fzio::read_centroids(a.fixture, a.zones, a.raster);
+    const fzio::Centroids centroids = fzio::read_centroids(a.fixture, a.zones, a.raster, zones.n_zones);
     const int32_t* crow = centroids.empty() ? nullptr : centroids.rows.data();
     const int32_t* ccol = centroids.empty() ? nullptr : centroids.cols.data();
     const fz_shape shape{raster.width, raster.height};
@@ -202,9 +202,13 @@ int main(int argc, char** argv) {
                  std::to_string(nz) + "," + std::to_string(n) + "\n";
     }
 
-    const bool exists = std::ifstream(a.out).good();
+    bool has_header = false;
+    {
+        std::ifstream probe(a.out, std::ios::binary | std::ios::ate);
+        has_header = probe.good() && probe.tellg() > 0;
+    }
     std::ofstream out(a.out, std::ios::app);
-    if (!exists) out << "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells\n";
+    if (!has_header) out << "fixture,op,rung,threads,rep,seconds,checksum,zones,raster,den,n_zones,n_cells\n";
     out << lines;
     std::cout << lines;
     return 0;

@@ -20,8 +20,14 @@ public static unsafe class Rasterizer
         long nRings = ringZone.Length;
         if (ringIsHole.Length != nRings || ringStart.Length != nRings + 1)
             throw new ArgumentException("ringStart must have nRings + 1 entries and ringIsHole nRings entries");
-        if (nRings > 0 && (ringStart[^1] < 0 || ringStart[^1] * 2 > xy.Length))
-            throw new ArgumentException("ring offsets point outside the coordinate array");
+        if (nRings > 0)
+        {
+            long nPoints = xy.Length / 2;
+            if (ringStart[0] < 0) throw new ArgumentException("ring offsets must be non-negative");
+            for (int i = 0; i < nRings; i++)
+                if (ringStart[i + 1] < ringStart[i] || ringStart[i + 1] > nPoints)
+                    throw new ArgumentException("ring offsets must be non-decreasing and inside the coordinate array");
+        }
         if (width <= 0 || height <= 0 || maskOut.Length != (long)width * height)
             throw new ArgumentException("maskOut must have width * height entries");
         var opt = (options ?? Options.Default).ToNative();

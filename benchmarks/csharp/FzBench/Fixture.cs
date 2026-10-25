@@ -97,9 +97,10 @@ public sealed class Fixture
                 default:
                 {
                     int s = BitConverter.ToInt32(bytes, (int)(i * 4));
+                    if (nodata.HasValue && s == nodataI32) { v = -9999.0; break; }
                     if (s >= (1 << 24) || s <= -(1 << 24))
                         throw new InvalidDataException($"raster_{name}.bin: integer {s} is not exact in float32");
-                    v = (nodata.HasValue && s == nodataI32) ? -9999.0 : s;
+                    v = s;
                     break;
                 }
             }

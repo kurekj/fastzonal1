@@ -191,3 +191,26 @@ def test_synthetic_small_bytes_are_fixed(tmp_path):
     assert zones_hash == "7a25330799da48e1548e657c38d7033ec3d2fcc5cf93967eebe0595664dc3f06"
     z = io.read_zones(out / "zones_rect.json")
     assert z["meta"]["licence"] == "MIT"
+
+
+def test_prepare_fixture_remaps_integer_nodata_and_rejects_wide_values(tmp_path):
+    data = np.array([[1, 2], [4294967295, 3]], dtype=np.uint32)
+    tif = tmp_path / "classes.tif"
+    with rasterio.open(tif, "w", driver="GTiff", height=2, width=2, count=1, dtype="uint32", crs="EPSG:3035",
+                       transform=from_origin(0, 2, 1, 1), nodata=4294967295) as dst:
+        dst.write(data, 1)
+    out = tmp_path / "fx"
+    subprocess.run([sys.executable, str(BENCH / "prepare_fixture.py"), "--raster", str(tif), "--name", "cls",
+                    "--out", str(out)], check=True)
+    arr, meta = io.read_raster(out / "raster_cls.json")
+    assert arr.dtype == np.int32 and meta["nodata"] == -9999
+    assert arr[1, 0] == -9999 and arr[0, 1] == 2
+    # a valid value that is not exact in float32 is refused
+    wide = np.array([[1, 20000000], [3, 4]], dtype=np.uint32)
+    tif2 = tmp_path / "wide.tif"
+    with rasterio.open(tif2, "w", driver="GTiff", height=2, width=2, count=1, dtype="uint32", crs="EPSG:3035",
+                       transform=from_origin(0, 2, 1, 1)) as dst:
+        dst.write(wide, 1)
+    proc = subprocess.run([sys.executable, str(BENCH / "prepare_fixture.py"), "--raster", str(tif2), "--name", "w",
+                           "--out", str(tmp_path / "fx2")], capture_output=True, text=True)
+    assert proc.returncode != 0 and "2^24" in proc.stderr

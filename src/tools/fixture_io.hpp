@@ -45,8 +45,10 @@ struct FixtureMeta {
 
 Raster read_raster(const std::string& dir, const std::string& name);
 Zones read_zones(const std::string& dir, const std::string& name);
-// Empty when the centroid file for this raster does not exist.
-Centroids read_centroids(const std::string& dir, const std::string& zones, const std::string& raster);
+// Empty when the centroid file for this raster does not exist; throws when it does not hold exactly
+// n_zones (row, col) pairs.
+Centroids read_centroids(const std::string& dir, const std::string& zones, const std::string& raster,
+                         int32_t n_zones);
 FixtureMeta read_fixture_meta(const std::string& dir);
 // Values of a `zone,value` CSV in zone order (header skipped).
 std::vector<double> read_expected(const std::string& path);

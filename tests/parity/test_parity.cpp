@@ -34,20 +34,20 @@ struct Case {
     std::string fixture, zones, raster;
 };
 
-// Every mean_<zones>_<raster>.csv under the expected root names one case.
+// Every (zones, raster) pair of a fixture whose expected mean file exists is one case; the pairs
+// come from fixture.json so names may contain underscores.
 std::vector<Case> discover() {
     std::vector<Case> cases;
     if (!fs::exists(kExpectedRoot)) return cases;
     for (const auto& fx : fs::directory_iterator(kExpectedRoot)) {
         if (!fx.is_directory()) continue;
-        for (const auto& f : fs::directory_iterator(fx.path())) {
-            const std::string name = f.path().filename().string();
-            if (name.rfind("mean_", 0) != 0 || name.size() < 9) continue;
-            const std::string body = name.substr(5, name.size() - 9);  // strip "mean_" and ".csv"
-            const auto us = body.find('_');
-            if (us == std::string::npos) continue;
-            cases.push_back({fx.path().filename().string(), body.substr(0, us), body.substr(us + 1)});
-        }
+        const std::string id = fx.path().filename().string();
+        const fs::path fdir = fs::path(kFixtureRoot) / id;
+        if (!fs::exists(fdir / "fixture.json")) continue;
+        const fzio::FixtureMeta meta = fzio::read_fixture_meta(fdir.string());
+        for (const std::string& z : meta.zones)
+            for (const std::string& r : meta.rasters)
+                if (fs::is_regular_file(fx.path() / ("mean_" + z + "_" + r + ".csv"))) cases.push_back({id, z, r});
     }
     return cases;
 }
@@ -58,16 +58,16 @@ void require_close(const std::vector<double>& got, const std::vector<double>& wa
     size_t worst = 0;
     double worst_err = 0.0;
     for (size_t z = 0; z < got.size(); ++z) {
+        INFO(what << ": zone " << z << " got " << got[z] << " want " << want[z]);
+        REQUIRE(std::isfinite(got[z]));
+        REQUIRE(std::isfinite(want[z]));
         const double tol = rel * std::max(1.0, std::fabs(want[z]));
         const double err = std::fabs(got[z] - want[z]);
         if (err > worst_err) {
             worst_err = err;
             worst = z;
         }
-        if (err > tol) {
-            INFO(what << ": zone " << z << " got " << got[z] << " want " << want[z]);
-            REQUIRE(err <= tol);
-        }
+        REQUIRE(err <= tol);
     }
     INFO(what << ": worst zone " << worst << " abs error " << worst_err);
     SUCCEED();
@@ -113,7 +113,7 @@ TEST_CASE("parity with the csharp baseline") {
             ++checks;
         }
 
-        const auto centroids = fzio::read_centroids(fdir, c.zones, c.raster);
+        const auto centroids = fzio::read_centroids(fdir, c.zones, c.raster, zones.n_zones);
         const int32_t* crow = centroids.empty() ? nullptr : centroids.rows.data();
         const int32_t* ccol = centroids.empty() ? nullptr : centroids.cols.data();
 
