@@ -1,0 +1,27 @@
+# build trees
+build/
+out/
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# plan workspaces (git-ignored scratch for the executing-plans skill)
+.superpowers/
+
+# fixtures that are fetched, not committed (small ones under tests/fixtures are tracked)
+benchmarks/fixtures/*/
+!benchmarks/fixtures/FORMAT.md
+!benchmarks/fixtures/manifest.json
+
+# logs
+*.log
