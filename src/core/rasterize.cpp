@@ -1,4 +1,5 @@
 #include "rasterize.hpp"
+#include "dispatch.hpp"
 #include "validate.hpp"
 
 #include <algorithm>
@@ -178,13 +179,18 @@ int fz_rasterize(const double* xy, const int64_t* ring_start, const uint8_t* rin
     if (!std::isfinite(t.pixel_w) || !std::isfinite(t.pixel_h) || !(t.pixel_w > 0.0) || !(t.pixel_h > 0.0) ||
         !std::isfinite(t.origin_x) || !std::isfinite(t.origin_y))
         return FZ_ERR_ARG;
-    if (opt->backend == FZ_BACKEND_CUDA) return FZ_ERR_BACKEND;
+    fz::Plan plan;
+    rc = fz::resolve_plan(opt, s, plan);
+    if (rc != FZ_OK) return rc;
 
     try {
         fz::PolygonSet set;
         rc = fz::build_polygon_set(xy, ring_start, ring_is_hole, ring_zone, n_rings, t, s, opt->raster_mode, set);
         if (rc != FZ_OK) return rc;
-        fz::rasterize_band(set, t, s, 0, s.height, opt->raster_mode, mask_out);
+        const int mode = opt->raster_mode;
+        fz::for_each_band(plan, s, [&](int32_t, int32_t row0, int32_t row1) {
+            fz::rasterize_band(set, t, s, row0, row1, mode, mask_out);
+        });
         return FZ_OK;
     } catch (const std::bad_alloc&) {
         return FZ_ERR_NOMEM;

@@ -22,6 +22,7 @@ add_library(fastzonal SHARED
     src/core/options.cpp
     src/core/rasterize.cpp
     src/core/zonal.cpp
+    src/core/dispatch.cpp
 )
 target_include_directories(fastzonal PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

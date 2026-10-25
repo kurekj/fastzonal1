@@ -20,19 +20,38 @@ inline bool is_nodata(T v, T nodata) {
 // FZ_OK when every mask value lies in [-1, n_zones), else FZ_ERR_ARG.
 int validate_mask(const int32_t* mask, size_t n, int32_t n_zones);
 
-// Validation shared by the zonal entry points (null pointers, shape, n_zones, backend).
+// Validation shared by the zonal entry points (null pointers, shape, n_zones, options).
 int validate_zonal_args(const void* raster, const int32_t* mask, fz_shape s, int32_t n_zones, const void* out,
                         const fz_options* opt);
 
 void stats_init(fz_stats* acc, int32_t n_zones);
+inline void stats_reset(fz_stats& a);
+inline void stats_merge_one(fz_stats& into, const fz_stats& from) {
+    into.count += from.count;
+    into.sum += from.sum;
+    into.sumsq += from.sumsq;
+    if (from.min < into.min) into.min = from.min;
+    if (from.max > into.max) into.max = from.max;
+}
 // into[z] += from[z] for every zone, in zone order.
 void stats_merge(fz_stats* into, const fz_stats* from, int32_t n_zones);
 // Zones with count 0 get min = max = 0 so no infinity leaves the library.
 void stats_finalize(fz_stats* acc, int32_t n_zones);
 
+inline void stats_add(fz_stats& a, double d, int32_t z, std::vector<int32_t>* touched) {
+    if (a.count == 0 && touched != nullptr) touched->push_back(z);
+    a.count += 1;
+    a.sum += d;
+    a.sumsq += d * d;
+    if (d < a.min) a.min = d;
+    if (d > a.max) a.max = d;
+}
+
+// Accumulates rows [row0, row1) into acc (dense, n_zones entries). When touched is given, every
+// zone whose count goes from 0 to 1 is appended to it, so the caller can gather a sparse partial.
 template <class T>
 void zonal_band(const T* raster, const int32_t* mask, fz_shape s, int32_t row0, int32_t row1, T nodata,
-                fz_stats* acc) {
+                fz_stats* acc, std::vector<int32_t>* touched = nullptr) {
     const size_t begin = static_cast<size_t>(row0) * s.width;
     const size_t end = static_cast<size_t>(row1) * s.width;
     for (size_t i = begin; i < end; ++i) {
@@ -40,19 +59,13 @@ void zonal_band(const T* raster, const int32_t* mask, fz_shape s, int32_t row0, 
         if (z < 0) continue;
         const T v = raster[i];
         if (is_nodata(v, nodata)) continue;
-        const double d = static_cast<double>(v);
-        fz_stats& a = acc[z];
-        a.count += 1;
-        a.sum += d;
-        a.sumsq += d * d;
-        if (d < a.min) a.min = d;
-        if (d > a.max) a.max = d;
+        stats_add(acc[z], static_cast<double>(v), z, touched);
     }
 }
 
 template <class T>
 void ratio_band(const T* num, const T* den, const int32_t* mask, fz_shape s, int32_t row0, int32_t row1,
-                T nodata_num, T nodata_den, double eps, fz_stats* acc) {
+                T nodata_num, T nodata_den, double eps, fz_stats* acc, std::vector<int32_t>* touched = nullptr) {
     const size_t begin = static_cast<size_t>(row0) * s.width;
     const size_t end = static_cast<size_t>(row1) * s.width;
     for (size_t i = begin; i < end; ++i) {
@@ -62,22 +75,24 @@ void ratio_band(const T* num, const T* den, const int32_t* mask, fz_shape s, int
         if (is_nodata(a, nodata_num) || is_nodata(b, nodata_den)) continue;
         const double bd = static_cast<double>(b);
         if (bd < eps && bd > -eps) continue;
-        const double d = static_cast<double>(a) / bd;
-        fz_stats& st = acc[z];
-        st.count += 1;
-        st.sum += d;
-        st.sumsq += d * d;
-        if (d < st.min) st.min = d;
-        if (d > st.max) st.max = d;
+        stats_add(acc[z], static_cast<double>(a) / bd, z, touched);
     }
 }
 
 // Value -> count per zone. Keys are doubles so one structure serves every raster type.
-using ZoneCounts = std::vector<std::unordered_map<double, int64_t>>;
+using ValueCounts = std::unordered_map<double, int64_t>;
+using ZoneCounts = std::vector<ValueCounts>;
+
+// Sparse per-thread majority state: slot[z] is the index of zone z in maps, or -1.
+struct MajorityScratch {
+    std::vector<int32_t> slot;
+    std::vector<int32_t> zones;
+    std::vector<ValueCounts> maps;
+};
 
 template <class T>
 void majority_band(const T* raster, const int32_t* mask, fz_shape s, int32_t row0, int32_t row1, T nodata,
-                   ZoneCounts& counts) {
+                   MajorityScratch& sc) {
     const size_t begin = static_cast<size_t>(row0) * s.width;
     const size_t end = static_cast<size_t>(row1) * s.width;
     for (size_t i = begin; i < end; ++i) {
@@ -85,11 +100,16 @@ void majority_band(const T* raster, const int32_t* mask, fz_shape s, int32_t row
         if (z < 0) continue;
         const T v = raster[i];
         if (is_nodata(v, nodata)) continue;
-        ++counts[z][static_cast<double>(v)];
+        int32_t idx = sc.slot[z];
+        if (idx < 0) {
+            idx = static_cast<int32_t>(sc.maps.size());
+            sc.slot[z] = idx;
+            sc.zones.push_back(z);
+            sc.maps.emplace_back();
+        }
+        ++sc.maps[idx][static_cast<double>(v)];
     }
 }
-
-void majority_merge(ZoneCounts& into, const ZoneCounts& from);
 
 // Picks the mode per zone (ties -> smallest value) with the centroid fallback for empty zones.
 template <class T>
