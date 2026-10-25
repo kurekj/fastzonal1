@@ -125,10 +125,13 @@ public sealed class OptimisedRung : IRung
 
     // ---- reductions ------------------------------------------------------------------------
 
+    /// <summary>Thread-local accumulators plus the list of zones this thread touched, so the merge
+    /// under the lock visits only those zones instead of all n for every thread.</summary>
     private sealed class Acc
     {
         public readonly double[] Sum;
         public readonly long[] Count;
+        public readonly List<int> Touched = new();
         public Acc(int n) { Sum = new double[n]; Count = new long[n]; }
     }
 
@@ -152,10 +155,16 @@ public sealed class OptimisedRung : IRung
         {
             long begin = (long)b * BandRows * width;
             long end = Math.Min((long)height, (long)(b + 1) * BandRows) * width;
+            int prev = -1;
             for (long i = begin; i < end; i++)
             {
                 int zone = mask[i];
                 if (zone < 0) continue;
+                if (zone != prev)
+                {
+                    if (acc.Count[zone] == 0 && acc.Sum[zone] == 0.0) acc.Touched.Add(zone);
+                    prev = zone;
+                }
                 float v = values[i];
                 if (IsNoData(v)) continue;
                 acc.Sum[zone] += v;
@@ -165,7 +174,13 @@ public sealed class OptimisedRung : IRung
         }, acc =>
         {
             lock (gate)
-                for (int zone = 0; zone < n; zone++) { total.Sum[zone] += acc.Sum[zone]; total.Count[zone] += acc.Count[zone]; }
+                foreach (int zone in acc.Touched)
+                {
+                    total.Sum[zone] += acc.Sum[zone];
+                    total.Count[zone] += acc.Count[zone];
+                    acc.Sum[zone] = 0.0;
+                    acc.Count[zone] = 0;
+                }
         });
         var result = new double[n];
         for (int zone = 0; zone < n; zone++)

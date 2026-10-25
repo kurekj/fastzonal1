@@ -32,16 +32,14 @@ int validate_zonal_args(const void* raster, const int32_t* mask, fz_shape s, int
     return FZ_OK;
 }
 
-inline void stats_reset(fz_stats& a) {
-    a.count = 0;
-    a.sum = 0.0;
-    a.sumsq = 0.0;
-    a.min = std::numeric_limits<double>::infinity();
-    a.max = -std::numeric_limits<double>::infinity();
-}
-
 void stats_init(fz_stats* acc, int32_t n_zones) {
-    for (int32_t z = 0; z < n_zones; ++z) stats_reset(acc[z]);
+    for (int32_t z = 0; z < n_zones; ++z) {
+        acc[z].count = 0;
+        acc[z].sum = 0.0;
+        acc[z].sumsq = 0.0;
+        acc[z].min = std::numeric_limits<double>::infinity();
+        acc[z].max = -std::numeric_limits<double>::infinity();
+    }
 }
 
 void stats_merge(fz_stats* into, const fz_stats* from, int32_t n_zones) {
@@ -59,60 +57,47 @@ void stats_finalize(fz_stats* acc, int32_t n_zones) {
 
 namespace {
 
-// Mask validation over all bands; any invalid value fails the whole call.
-int validate_mask_planned(const Plan& plan, const int32_t* mask, fz_shape s, int32_t n_zones) {
-    std::atomic<int> bad{0};
-    for_each_band(plan, s, [&](int32_t, int32_t row0, int32_t row1) {
-        if (bad.load(std::memory_order_relaxed)) return;
-        const size_t begin = static_cast<size_t>(row0) * s.width;
-        const size_t n = static_cast<size_t>(row1 - row0) * s.width;
-        if (validate_mask(mask + begin, n, n_zones) != FZ_OK) bad.store(1, std::memory_order_relaxed);
-    });
-    return bad.load() ? FZ_ERR_ARG : FZ_OK;
-}
-
 // Sparse partial result of one band: the zones it touched and their statistics.
 struct BandPartial {
     std::vector<int32_t> zones;
     std::vector<fz_stats> stats;
 };
 
-struct StatsScratch {
-    std::vector<fz_stats> dense;
-    std::vector<int32_t> touched;
-};
-
-// Runs band_fn(row0, row1, dense, touched) over every band and merges the per-band partials
+// Runs band_fn(row0, row1, scratch) -> bool over every band and merges the per-band partials
 // into out in ascending band order. The partial of a band never depends on which thread ran
-// it, so the result is independent of the thread count.
+// it, so the result is independent of the thread count. A band that reports an invalid mask
+// value stops the run and nothing is written to out.
 template <class BandFn>
-void reduce_stats(const Plan& plan, fz_shape s, int32_t n_zones, fz_stats* out, BandFn&& band_fn) {
+int reduce_stats(const Plan& plan, fz_shape s, int32_t n_zones, fz_stats* out, BandFn&& band_fn) {
     std::vector<BandPartial> partials(static_cast<size_t>(plan.n_bands));
+    std::atomic<bool> bad{false};
     for_each_band_with_scratch<StatsScratch>(
         plan, s,
         [&]() {
             StatsScratch sc;
-            sc.dense.resize(static_cast<size_t>(n_zones));
-            stats_init(sc.dense.data(), n_zones);
+            sc.init(n_zones);
             return sc;
         },
         [&](StatsScratch& sc, int32_t band, int32_t row0, int32_t row1) {
-            band_fn(row0, row1, sc.dense.data(), &sc.touched);
+            if (bad.load(std::memory_order_relaxed)) return;
+            const bool ok = band_fn(row0, row1, sc);
+            if (!ok) bad.store(true, std::memory_order_relaxed);
             BandPartial& p = partials[static_cast<size_t>(band)];
-            p.zones = sc.touched;
-            p.stats.resize(sc.touched.size());
-            for (size_t i = 0; i < sc.touched.size(); ++i) {
-                fz_stats& d = sc.dense[static_cast<size_t>(sc.touched[i])];
-                p.stats[i] = d;
-                stats_reset(d);
+            if (ok) {
+                p.zones = sc.touched;
+                p.stats.resize(sc.touched.size());
+                for (size_t i = 0; i < sc.touched.size(); ++i) p.stats[i] = sc.get(sc.touched[i]);
             }
+            for (int32_t z : sc.touched) sc.reset(z);
             sc.touched.clear();
         });
+    if (bad.load()) return FZ_ERR_ARG;
     stats_init(out, n_zones);
     for (const BandPartial& p : partials) {
         for (size_t i = 0; i < p.zones.size(); ++i) stats_merge_one(out[p.zones[i]], p.stats[i]);
     }
     stats_finalize(out, n_zones);
+    return FZ_OK;
 }
 
 template <class T>
@@ -127,12 +112,9 @@ int zonal_impl(const T* raster, const int32_t* mask, fz_shape s, int32_t n_zones
     rc = resolve_plan(opt, s, plan);
     if (rc != FZ_OK) return rc;
     try {
-        rc = validate_mask_planned(plan, mask, s, n_zones);
-        if (rc != FZ_OK) return rc;
-        reduce_stats(plan, s, n_zones, out, [&](int32_t row0, int32_t row1, fz_stats* dense, std::vector<int32_t>* touched) {
-            zonal_band(raster, mask, s, row0, row1, nodata, dense, touched);
+        return reduce_stats(plan, s, n_zones, out, [&](int32_t row0, int32_t row1, StatsScratch& sc) {
+            return zonal_band(raster, mask, s, row0, row1, nodata, n_zones, sc);
         });
-        return FZ_OK;
     } catch (const std::bad_alloc&) {
         return FZ_ERR_NOMEM;
     } catch (...) {
@@ -153,12 +135,9 @@ int ratio_impl(const T* num, const T* den, const int32_t* mask, fz_shape s, int3
     rc = resolve_plan(opt, s, plan);
     if (rc != FZ_OK) return rc;
     try {
-        rc = validate_mask_planned(plan, mask, s, n_zones);
-        if (rc != FZ_OK) return rc;
-        reduce_stats(plan, s, n_zones, out, [&](int32_t row0, int32_t row1, fz_stats* dense, std::vector<int32_t>* touched) {
-            ratio_band(num, den, mask, s, row0, row1, nodata_num, nodata_den, eps, dense, touched);
+        return reduce_stats(plan, s, n_zones, out, [&](int32_t row0, int32_t row1, StatsScratch& sc) {
+            return ratio_band(num, den, mask, s, row0, row1, nodata_num, nodata_den, eps, n_zones, sc);
         });
-        return FZ_OK;
     } catch (const std::bad_alloc&) {
         return FZ_ERR_NOMEM;
     } catch (...) {
@@ -213,9 +192,8 @@ int majority_impl(const T* raster, const int32_t* mask, fz_shape s, int32_t n_zo
     rc = resolve_plan(opt, s, plan);
     if (rc != FZ_OK) return rc;
     try {
-        rc = validate_mask_planned(plan, mask, s, n_zones);
-        if (rc != FZ_OK) return rc;
         std::vector<MajorityPartial> partials(static_cast<size_t>(plan.n_bands));
+        std::atomic<bool> bad{false};
         for_each_band_with_scratch<MajorityScratch>(
             plan, s,
             [&]() {
@@ -224,14 +202,19 @@ int majority_impl(const T* raster, const int32_t* mask, fz_shape s, int32_t n_zo
                 return sc;
             },
             [&](MajorityScratch& sc, int32_t band, int32_t row0, int32_t row1) {
-                majority_band(raster, mask, s, row0, row1, nodata, sc);
+                if (bad.load(std::memory_order_relaxed)) return;
+                const bool ok = majority_band(raster, mask, s, row0, row1, nodata, n_zones, sc);
+                if (!ok) bad.store(true, std::memory_order_relaxed);
                 MajorityPartial& p = partials[static_cast<size_t>(band)];
-                p.zones = std::move(sc.zones);
-                p.maps = std::move(sc.maps);
-                for (int32_t z : p.zones) sc.slot[static_cast<size_t>(z)] = -1;
+                for (int32_t z : sc.zones) sc.slot[static_cast<size_t>(z)] = -1;
+                if (ok) {
+                    p.zones = std::move(sc.zones);
+                    p.maps = std::move(sc.maps);
+                }
                 sc.zones.clear();
                 sc.maps.clear();
             });
+        if (bad.load()) return FZ_ERR_ARG;
         ZoneCounts counts(static_cast<size_t>(n_zones));
         for (MajorityPartial& p : partials) {
             for (size_t i = 0; i < p.zones.size(); ++i) {
@@ -239,7 +222,7 @@ int majority_impl(const T* raster, const int32_t* mask, fz_shape s, int32_t n_zo
                 if (into.empty()) {
                     into = std::move(p.maps[i]);
                 } else {
-                    for (const auto& kv : p.maps[i]) into[kv.first] += kv.second;
+                    p.maps[i].merge_into(into);
                 }
             }
         }

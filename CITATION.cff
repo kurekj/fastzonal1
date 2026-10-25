@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use fastzonal, please cite it as below."
+title: "fastzonal: zonal statistics and terrain indices over polygon units"
+version: 0.1.0
+date-released: 2026-10-25
+license: MIT
+repository-code: "https://github.com/kurekj/fastzonal1"
+authors:
+  - family-names: Kurek
+    given-names: Jarosław
+    orcid: "https://orcid.org/0000-0002-2789-4732"
+    affiliation: "Warsaw University of Life Sciences (SGGW)"
+  - family-names: Kardel
+    given-names: Ignacy
+    orcid: "https://orcid.org/0000-0002-5425-6218"
+    affiliation: "Warsaw University of Life Sciences (SGGW)"
+  - family-names: Okruszko
+    given-names: Tomasz
+    orcid: "https://orcid.org/0000-0002-5103-1638"
+    affiliation: "Warsaw University of Life Sciences (SGGW)"
+  - family-names: Piniewski
+    given-names: Mikołaj
+    orcid: "https://orcid.org/0000-0001-7930-4549"
+    affiliation: "Warsaw University of Life Sciences (SGGW)"
+  - family-names: Pusłowska-Tyszewska
+    given-names: Dorota
+    affiliation: "Warsaw University of Technology"
+keywords:
+  - zonal statistics
+  - rasterisation
+  - OpenMP
+  - GIS
+  - spatial decision support
