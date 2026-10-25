@@ -29,10 +29,18 @@ per cell). `threads_eff` is the configured worker limit (never more than row ban
 measurement of active workers. Runs are pinned: `OMP_PROC_BIND=close OMP_PLACES=cores`, and every
 invocation with at most one socket's worth of threads runs under `numactl --cpunodebind=0
 --membind=0`; the CPU governor and the OpenMP environment are recorded in `env_<stamp>.json`.
+The native driver runs with `MALLOC_MMAP_THRESHOLD_`, `MALLOC_TRIM_THRESHOLD_` and `MALLOC_TOP_PAD_`
+raised so that glibc keeps freed memory in the process (recorded in the environment file): without
+it every repetition pays page faults for its 47 MB output while the .NET garbage collector reuses
+warm pages, which is not a property of either algorithm. A host application that keeps its
+buffers between calls sees the warm-heap behaviour either way.
 `summary.json` lists `variability_warnings`: workloads where the serial backend and the OpenMP
 backend at one thread (the same code path) differ by more than 15%.
 
-What the timed region contains, per rung: the operation itself including its output allocation;
+What the timed region contains, per rung: the operation itself including its output allocation
+and, for rasterize, the per-call preparation of the polygons (bounding boxes and row ranges; the
+library's pre-pass, the optimised C# rung's ring arrays and the baseline's coordinate access all
+happen inside it);
 for the reductions, the centroid fallback for zones without a cell (the C# rungs compute those
 centroids lazily with NetTopologySuite, the library rungs read the fixture's precomputed centroid
 cells; both only for empty zones, so the cost is negligible either way). Fixture loading, mask

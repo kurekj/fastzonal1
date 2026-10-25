@@ -4,17 +4,16 @@ using NetTopologySuite.Geometries;
 namespace FzBench.Rungs;
 
 /// <summary>The reference algorithms rewritten the way a careful C# developer would: float[]
-/// rasters, int[] masks, flat ring arrays prepared once per zone set (outside the timed region,
-/// like the library's inputs), specialised loops without delegates, and Parallel.For over bands
-/// of rows with per-band partial results merged in ascending band order, so the result does not
-/// depend on the thread count. Same semantics as the baseline (COMPAT rasterisation, NoData -9999
+/// rasters, int[] masks, flat ring arrays with pixel bounding boxes prepared per call (inside the
+/// timed region, like the library's own per-call pre-pass and the baseline's coordinate access),
+/// specialised loops without delegates, and Parallel.For over bands of rows with per-band partial
+/// results merged in ascending band order, so the result does not depend on the thread count. Same semantics as the baseline (COMPAT rasterisation, NoData -9999
 /// or NaN, centroid fallback, smallest-value ties); the summation order differs from the
 /// baseline's single sequential pass, so means agree to rounding, not bit for bit.</summary>
 public sealed class OptimisedRung : IRung
 {
     private readonly int _bandRows;
     private readonly int _threads;
-    private readonly Dictionary<(string Zones, string Raster), List<PolyRing>> _rings = new();
 
     public OptimisedRung(int threads, int bandRows = 16)
     {
@@ -38,24 +37,12 @@ public sealed class OptimisedRung : IRung
         public required int StartRow, EndRow, StartCol, EndCol;
     }
 
-    /// <summary>Flat ring arrays with pixel bounding boxes, prepared once per (zones, raster)
-    /// and reused by every repetition; the warm-up repetition pays for it.</summary>
-    private List<PolyRing> Rings(Fixture f, string zones, string raster)
-    {
-        var key = (zones, raster);
-        if (_rings.TryGetValue(key, out var cached)) return cached;
-        var r = f.Rasters[raster];
-        var rings = PrepareRings(f.Zones[zones].Geometries, r.Transform, r.Width, r.Height);
-        _rings[key] = rings;
-        return rings;
-    }
-
     public object Rasterize(Fixture f, string zones, string raster)
     {
         var r = f.Rasters[raster];
         var t = r.Transform;
         int width = r.Width, height = r.Height;
-        var rings = Rings(f, zones, raster);
+        var rings = PrepareRings(f.Zones[zones].Geometries, t, width, height, Par);
         var mask = new int[(long)width * height];
         int nBands = Bands(height);
         // every band applies, in polygon order, the rings whose row range touches it, so later
@@ -101,11 +88,15 @@ public sealed class OptimisedRung : IRung
         return mask;
     }
 
-    private static List<PolyRing> PrepareRings(List<Geometry> geoms, GeoTransform t, int width, int height)
+    /// <summary>Flat ring arrays with pixel bounding boxes; the per-polygon work is independent
+    /// and runs in parallel, the list is assembled in zone order.</summary>
+    private static List<PolyRing> PrepareRings(List<Geometry> geoms, GeoTransform t, int width, int height,
+        ParallelOptions par)
     {
-        var rings = new List<PolyRing>();
-        for (int zone = 0; zone < geoms.Count; zone++)
+        var perZone = new PolyRing[]?[geoms.Count];
+        Parallel.For(0, geoms.Count, par, zone =>
         {
+            var list = new List<PolyRing>(1);
             foreach (var polygon in Parts(geoms[zone]))
             {
                 var coords = polygon.ExteriorRing.Coordinates;
@@ -121,14 +112,17 @@ public sealed class OptimisedRung : IRung
                     if (y[i] < minY) minY = y[i];
                     if (y[i] > maxY) maxY = y[i];
                 }
-                rings.Add(new PolyRing
+                list.Add(new PolyRing
                 {
                     Zone = zone, X = x, Y = y,
                     StartCol = Math.Max(0, t.WorldToCol(minX)), EndCol = Math.Min(width - 1, t.WorldToCol(maxX)),
                     StartRow = Math.Max(0, t.WorldToRow(maxY)), EndRow = Math.Min(height - 1, t.WorldToRow(minY))
                 });
             }
-        }
+            perZone[zone] = list.ToArray();
+        });
+        var rings = new List<PolyRing>(geoms.Count);
+        foreach (var arr in perZone) if (arr != null) rings.AddRange(arr);
         return rings;
     }
 

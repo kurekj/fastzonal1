@@ -16,6 +16,11 @@ set -euo pipefail
 # worth of threads is pinned to NUMA node 0 (memory too) so that the serial rungs, the C# rungs and
 # the small thread counts are not scattered across sockets. Larger thread counts use both sockets.
 export OMP_PROC_BIND=close OMP_PLACES=cores
+# Allocator: glibc hands large blocks back to the kernel after every free, so a driver that allocates
+# its output per repetition would pay page faults on every call while the .NET GC keeps its heap
+# warm. Raising the mmap threshold and disabling trimming gives the native driver the same warm
+# heap a long-running host application has. Recorded in the environment file.
+export MALLOC_MMAP_THRESHOLD_=1073741824 MALLOC_TRIM_THRESHOLD_=4294967296 MALLOC_TOP_PAD_=268435456
 node0_cpus=$( (lscpu -p=CPU,NODE 2>/dev/null | grep -v '^#' | awk -F, '$2==0' | wc -l) || echo 0 )
 pin() {  # pin <threads> <command...>
     local t="$1"; shift
@@ -90,6 +95,7 @@ record = {
     "numa_node0_cpus": sh("lscpu -p=CPU,NODE | grep -v '^#' | awk -F, '$2==0' | wc -l"),
     "omp_proc_bind": os.environ.get("OMP_PROC_BIND"), "omp_places": os.environ.get("OMP_PLACES"),
     "omp_thread_limit": os.environ.get("OMP_THREAD_LIMIT"),
+    "malloc_env": {k: os.environ.get(k) for k in ("MALLOC_MMAP_THRESHOLD_", "MALLOC_TRIM_THRESHOLD_", "MALLOC_TOP_PAD_")},
     "fz_version": sh(f"grep -m1 'project(fastzonal VERSION' '{repo}/CMakeLists.txt'").split("VERSION")[-1].split()[0] if True else "",
     "cmake_cache": cache, "extra_flags": "-ffp-contract=off (always), OpenMP",
     "band_rows": int(band_rows), "reps": int(reps), "threads": threads.split(), "quick": quick == "1",

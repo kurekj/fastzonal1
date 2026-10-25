@@ -17,6 +17,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -62,12 +63,12 @@ bool parse(int argc, char** argv, Args& a) {
     return a.backend == "serial" || a.backend == "openmp";
 }
 
-double mask_checksum(const std::vector<int32_t>& mask) {
+double mask_checksum(const int32_t* mask, size_t n) {
     long long assigned = 0, sum = 0;
-    for (int32_t v : mask)
-        if (v >= 0) {
+    for (size_t i = 0; i < n; ++i)
+        if (mask[i] >= 0) {
             ++assigned;
-            sum += v;
+            sum += mask[i];
         }
     return static_cast<double>(assigned) + static_cast<double>(sum);
 }
@@ -163,16 +164,14 @@ int main(int argc, char** argv) {
         std::vector<fz_stats> stats;
         std::vector<double> values;
         std::vector<uint8_t> has;
-        if (a.op == "rasterize") {
-            std::vector<int32_t>().swap(mask);
-        }
+        std::unique_ptr<int32_t[]> fresh_mask;  // rasterize output: allocated inside the timed region, uninitialised
         const auto t0 = std::chrono::steady_clock::now();
         if (a.op == "rasterize") {
-            mask.resize(n);
+            fresh_mask.reset(new int32_t[n]);
             check(fz_rasterize(zones.xy.data(), zones.ring_start.data(), zones.ring_is_hole.data(),
-                               zones.ring_zone.data(), zones.n_rings(), t, shape, mask.data(), &opt), "rasterize");
+                               zones.ring_zone.data(), zones.n_rings(), t, shape, fresh_mask.get(), &opt), "rasterize");
             const auto t1 = std::chrono::steady_clock::now();
-            checksum = mask_checksum(mask);
+            checksum = mask_checksum(fresh_mask.get(), n);
             if (rep >= 0) {
                 const double s = std::chrono::duration<double>(t1 - t0).count();
                 char buf[64];

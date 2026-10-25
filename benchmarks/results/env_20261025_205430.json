@@ -1,5 +1,5 @@
 {
-  "stamp": "20261025_202052",
+  "stamp": "20261025_205430",
   "hostname": "deep3",
   "os": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
   "cpu": "Intel(R) Xeon(R) Gold 5420+",
@@ -8,8 +8,13 @@
   "compiler": "c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
   "cmake": "cmake version 4.4.4",
   "dotnet": "10.0.113",
-  "git_commit": "b1bcf871631edb76c71c5b86693d3d53398a04e4",
+  "git_commit": "3e2ccca9290786fccf956d43baada89b4e854880",
   "git_dirty": true,
+  "cpu_governor": "powersave",
+  "numa_node0_cpus": "56",
+  "omp_proc_bind": "close",
+  "omp_places": "cores",
+  "omp_thread_limit": null,
   "fz_version": "0.1.0",
   "cmake_cache": {
     "CMAKE_BUILD_TYPE": "Release",
@@ -32,6 +37,6 @@
   ],
   "quick": false,
   "fixtures_dir": "/data/fastzonal/fixtures",
-  "fixtures_manifest_sha256": "c3acde8fd7611ab903fb438a1612c54da4e75e1f2d001f3d67dd755bdcc7eced",
+  "fixtures_manifest_sha256": "64d78a1dd7be181ffcb7bf3afe5ea0859f7b78a1989ccd1c076cc296b9591041",
   "omp_num_threads": null
 }
